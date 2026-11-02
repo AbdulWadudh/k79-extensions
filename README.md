@@ -13,6 +13,7 @@ A Bun-managed monorepo for small, focused Chrome extensions that share one desig
 ## Start here
 
 - [`SPEC.md`](./SPEC.md) — scope, architecture, security boundaries, UX, and acceptance criteria.
+- [`AGENTS.md`](./AGENTS.md) — engineering contract: workflow, architecture rules, UI standards, security, testing, git, and Definition of Done.
 - [`PRODUCT.md`](./PRODUCT.md) — durable product truth for Impeccable.
 - `DESIGN.md` — created after the first shipped surface, from the built design, as required by the Impeccable workflow.
 
