@@ -1,0 +1,747 @@
+# Spec: K79 Extensions + Infisical Console
+
+**Status:** Awaiting approval. No implementation starts until this spec is accepted.
+
+**Owner:** K79
+**Date:** 2026-11-03
+**Target:** Chrome 114+ (Manifest V3), internal/unpacked distribution first
+
+---
+
+## 1. Objective
+
+Create a Bun-managed monorepo for small, focused Chrome extensions, then ship the first one: **Infisical Console**, a side-panel companion for Infisical Cloud and self-hosted Infisical.
+
+A developer should be able to open Chrome's side panel, see the current Infisical scope, find a secret, reveal or copy it, and make a small correction without opening the Infisical dashboard. The experience must feel faster than a dashboard while being more deliberate about exposure than a `.env` file.
+
+Success is not “a CRUD form that works.” Success is a tool that a developer can keep open all day without worrying that a secret will appear, persist, or leave the machine by accident.
+
+### Success criteria
+
+- A new user can connect, choose a scope, and copy a secret in under two minutes.
+- A daily user can find a secret by keyboard in under five seconds.
+- Secret values are never written to persistent storage, logs, analytics, or error reports.
+- Every mutation makes the affected project, environment, path, and key obvious before it happens.
+- The build is loadable as an unpacked Chrome extension from one command.
+- The UI is usable at 360 px and 800 px side-panel widths and with a keyboard alone.
+- The architecture accepts a second extension without copying the build system, design tokens, or messaging layer.
+
+---
+
+## 2. Capability Map
+
+| Module | Responsibility | Depends on |
+| --- | --- | --- |
+| `extension-foundation` | Bun workspace, WXT shell, shared UI/tokens, shared messaging base, lint/typecheck/test/build/zip commands. | — |
+| `infisical-connection` | Base URL, Universal Auth, pasted token, credential storage policy, token lifecycle, project/environment discovery, permission fallback. | `extension-foundation` |
+| `infisical-secrets` | Secret list, search, reveal, copy, create, edit, delete, folder path handling, mutation states. | `infisical-connection` |
+| `extension-surfaces` | Onboarding, side-panel workspace, detail/editor panes, settings, toolbar popup, responsive and keyboard behavior. | `infisical-connection`, `infisical-secrets` |
+| `quality-release` | Unit/component/e2e tests, accessibility checks, packaging, live smoke-test notes, ADRs. | all |
+
+**Build order:** foundation → connection → secrets → surfaces → hardening/release. The surfaces module begins against typed contracts as soon as the connection boundary exists; it does not wait for every API edge case.
+
+---
+
+## 3. Scope
+
+### In scope for V1
+
+- Connect to Infisical Cloud US, Cloud EU, or a self-hosted instance.
+- Authenticate with:
+  - Universal Auth: Machine Identity Client ID + Client Secret.
+  - A pasted Infisical access token.
+- Choose a project and environment.
+- Fall back to a manual project ID and environment slug when listing projects/environments is forbidden.
+- Work within a folder path, with recent paths.
+- List shared secrets with values hidden by default.
+- Search locally by key, path, and comment.
+- Reveal and copy a secret value on demand.
+- Create a shared secret.
+- Edit value, comment, and key (rename).
+- Delete a shared secret with explicit confirmation.
+- Toolbar popup: connection state, current scope, recent secret names, quick copy, open side panel.
+- Onboarding, settings, empty/loading/error states.
+- Demo mode with synthetic data for development and visual review.
+
+### Out of scope for V1
+
+- Secret version history, rollback, dynamic secrets, rotations, tags, personal overrides, imports, folder CRUD, secret sharing, audit logs.
+- Bulk import/export, multi-select, multi-project workspaces.
+- OAuth/SSO login, Chrome identity integration, team administration.
+- Chrome Web Store listing, auto-update, Edge/Firefox/Safari packaging.
+- Telemetry or analytics.
+
+---
+
+## 4. Users and Jobs
+
+### Primary jobs
+
+1. **Confirm:** “Is `STRIPE_SECRET_KEY` set to the value I think it is in staging?”
+2. **Retrieve:** “Copy the current production database URL into my terminal or another tool.”
+3. **Correct:** “Add a missing local-development secret or fix a stale value without opening the dashboard.”
+4. **Audit scope:** “Which project, environment, and folder am I looking at before I change anything?”
+
+### Non-goals
+
+The extension is not a secret browser for unauthorized users. It uses the permissions of the supplied identity/token and must not attempt to bypass Infisical RBAC. It is not an offline vault and must not imply that values are available when the network is down.
+
+---
+
+## 5. UX Specification
+
+### 5.1 Surfaces
+
+**Side panel — full workspace.** Chrome 114+ side panel, 320–800 px wide. This is the primary surface for browsing and editing.
+
+**Toolbar popup — quick slip.** 380 px wide, 480–560 px tall. Shows connection state, current scope, up to five recent secret names, a search field, copy actions, and an “Open full panel” button. It must not host the edit form.
+
+**Onboarding — inside the side panel.** No separate options page for the first run. Three steps:
+
+1. **Connect:** instance URL, auth method tabs, credentials/token, “Test connection.”
+2. **Choose scope:** project + environment, or manual fallback.
+3. **Ready:** summary, “Remember on this device” choice, open workspace.
+
+### 5.2 Information architecture
+
+```text
+Side panel
+├─ Onboarding (first run only)
+├─ Workspace
+│  ├─ Scope header        project / environment / connection state
+│  ├─ Path bar            / / / / current folder, recent paths, up one level
+│  ├─ Search              local filter, keyboard shortcut
+│  ├─ Secret list         rows, folder grouping, counts, loading/empty/error states
+│  ├─ Inspector          detail + reveal/copy/edit/delete (wide layout)
+│  └─ Editor             create/edit (pane on wide, pushed page on narrow)
+├─ Settings
+│  ├─ Connection
+│  ├─ Appearance
+│  └─ About
+└─ Popup
+   ├─ Status + scope
+   ├─ Recent secrets
+   ├─ Quick search
+   └─ Open full panel
+```
+
+### 5.3 Layout
+
+The signature structure is **index and leaf**:
+
+- **Wide (≥ 640 px):** a narrow vertical environment/index rail on the left, the secret list in the middle, and a 280–320 px inspector on the right. The rail gives one-click environment switching without a modal.
+- **Medium (480–639 px):** top scope band and list; selecting a row pushes a full-height inspector page with a back control.
+- **Narrow (320–479 px):** same as medium, with the environment selector collapsed into a labeled chip and the path bar reduced to a breadcrumb that can be scrolled horizontally.
+- **No horizontal page scroll at any supported width.**
+
+The editor is **not a centered modal**. On wide layouts it replaces the inspector; on narrow layouts it is a pushed page. Only short, destructive confirmations use a dialog.
+
+### 5.4 Secret list
+
+Each row shows:
+
+- Secret key in monospace with tabular figures.
+- Masked value: a fixed-width mask that does **not** reveal value length.
+- Folder path (when not at root), muted.
+- A small metadata line: version and relative update time.
+- Hover/focus actions: Reveal, Copy, More.
+- A selected state with a solid accent rail, not a glow.
+
+Behavior:
+
+- Values are not fetched during list load. The list request uses `viewSecretValue=false`.
+- Reveal fetches the single secret with `viewSecretValue=true`; the value stays in memory for the current panel session.
+- Copy fetches the value if needed, writes to the clipboard, and shows a short confirmation with the key name.
+- “Conceal all” clears all revealed values and closes the inspector value.
+- Search is local and never queries values.
+
+### 5.5 Inspector
+
+- Large key, path, project, environment, version, last update, and comment.
+- Value field: masked until revealed; reveal and copy buttons; monospace, multi-line aware.
+- Edit and Delete actions.
+- A clear “Shared secret” label. Personal secrets are out of scope.
+- On 403, mutation controls are disabled with a precise explanation.
+
+### 5.6 Editor
+
+Fields:
+
+- Key (required; no `/`; trimmed).
+- Value (required for create; can be empty on edit only if the user explicitly clears it).
+- Comment (optional).
+- Folder path (defaults to the current path; normalized to start with `/`, no trailing slash except root).
+- Rename guidance when the key changes.
+
+States: default, dirty, validating, saving, saved, error. A failed save preserves the draft and shows the server message without echoing the value.
+
+### 5.7 Delete confirmation
+
+The confirmation names the key, project, environment, and path. The destructive button is labeled **Delete secret** and is never the default focused action. A successful delete removes the row and shows an undo-shaped message only if a real restore is available; otherwise it states that the deletion is permanent in Infisical.
+
+### 5.8 Keyboard map
+
+| Shortcut | Action |
+| --- | --- |
+| `/` or `⌘/Ctrl+K` | Focus search |
+| `↑` / `↓` | Move selection |
+| `Enter` | Open inspector |
+| `R` | Reveal selected value |
+| `⌘/Ctrl+C` | Copy selected value |
+| `E` | Edit selected secret |
+| `N` | New secret |
+| `Esc` | Close inspector/editor/dialog |
+| `⌘/Ctrl+Shift+X` | Conceal all revealed values |
+
+Shortcuts do not fire while an input, textarea, or select has focus. Delete never has a bare single-key shortcut.
+
+### 5.9 State inventory
+
+Every screen must define: loading, empty, no-results, offline, unauthorized, forbidden, rate-limited, server-error, stale-cache, saving, saved, and destructive-confirmation states. Toasts are confirmation, not the only error channel. Errors stay near the control that caused them.
+
+### 5.10 Copy and empty-state copy
+
+- Empty folder: “No secrets in `/path` yet.” Actions: New secret, Go up.
+- No results: “No secrets match `query`.” Action: Clear search.
+- No projects: “This identity cannot list projects.” Action: Enter a project ID manually.
+- Expired token: “Your Infisical session expired. Reconnect to continue.” Action: Reconnect.
+- Forbidden mutation: “This identity can read this scope but cannot change it.” No retry button that would fail again.
+
+---
+
+## 6. Design Intent
+
+**Mode:** Operate. The interface serves the task and earns trust through precision, not decoration.
+
+**Working direction:** *The Secure Ledger* — an archival, security-printing-informed instrument rather than a neon developer dashboard. Hairline rules, indexed edges, tabular numbers, a stamped environment chip, and a single restrained accent. The world should feel like a controlled record of sensitive entries, not a toy vault. This direction is provisional until the Impeccable direction round after spec approval.
+
+**Hard constraints:**
+
+- No neon-on-black glow, glassmorphism, gradient text, or generic “cyber vault” imagery.
+- No display type in labels, buttons, or data.
+- One workhorse sans for UI and one bundled monospace for keys/values with tabular figures.
+- Hugeicons only, Stroke Rounded set; one icon weight and one optical size unless a documented exception exists.
+- Restrained color: neutral ground, one accent for primary/selection, one semantic destructive color. Environment colors are labels, not decoration.
+- Light and dark themes from the same tokens; default to the system preference.
+- A visible scope line above every destructive or mutating action.
+- Motion is 150–220 ms, state-driven, and disabled under `prefers-reduced-motion`.
+- Keyboard focus is always visible and never clipped.
+
+**Deliberate moments:**
+
+- The masked value field uses a fixed-width mask, so the length of a secret is not leaked at a glance.
+- Reveal is a short, calm transition rather than a dramatic flourish.
+- Copy feedback changes the action in place; it does not move the row.
+- The environment chip reads like a stamp on a record, with a color and a text label.
+- Empty states teach the next action without illustrations of padlocks or keys.
+
+**Impeccable workflow:** run `impeccable context`, then the Operate direction round before UI code. Record the chosen direction contract in the surface brief. Use the code-led path because this is an app surface. After the build, run the finish review and record `DESIGN.md` from the shipped result.
+
+---
+
+## 7. Architecture
+
+### 7.1 Stack
+
+- **Runtime and package manager:** Bun 1.4.x.
+- **Extension build:** WXT (latest stable at scaffold time) with React and TypeScript.
+- **UI primitives:** Base UI (`@base-ui/react`). Use shadcn/ui's Base UI recipes as the starting point for shared primitives, vendored into `packages/ui` and re-themed with K79 tokens rather than imported as an opaque dependency.
+- **Icons:** Hugeicons (`@hugeicons/react` + `@hugeicons/core-free-icons`, Stroke Rounded free set). No Lucide or mixed icon libraries.
+- **State:** TanStack Query for server state; React context for session/scope; no global store until a concrete need appears.
+- **Forms:** shadcn's current React Hook Form recipe: `useForm` + `Controller` + `zodResolver` + Base UI `Field` anatomy (`Field`, `FieldLabel`, `FieldDescription`, `FieldError`, `FieldGroup`, `FieldSet`). Use `mode: "onTouched"`, `data-invalid` on the field, and `aria-invalid` on the control.
+- **Validation:** Zod at every network and message boundary; the same schemas feed form validation.
+- **Tests:** Vitest, React Testing Library, Playwright, axe.
+- **Quality:** Biome, TypeScript strict mode.
+
+### 7.2 Workspace layout
+
+```text
+k79-extensions/
+├─ extensions/
+│  └─ infisical/
+│     ├─ entrypoints/
+│     │  ├─ background.ts
+│     │  ├─ sidepanel/
+│     │  │  ├─ index.html
+│     │  │  ├─ main.tsx
+│     │  │  └─ App.tsx
+│     │  └─ popup/
+│     │     ├─ index.html
+│     │     ├─ main.tsx
+│     │     └─ App.tsx
+│     ├─ src/
+│     │  ├─ api/              # Infisical HTTP client + DTOs
+│     │  ├─ background/       # auth session, request handlers, storage
+│     │  ├─ features/
+│     │  │  ├─ connection/
+│     │  │  ├─ secrets/
+│     │  │  └─ settings/
+│     │  ├─ components/       # Extension-specific composition
+│     │  ├─ lib/              # messaging client, queries, formatting
+│     │  ├─ styles/
+│     │  └─ demo/             # Synthetic fixtures, dev-only
+│     ├─ wxt.config.ts
+│     └─ package.json
+├─ packages/
+│  ├─ shared/
+│  │  ├─ src/messaging.ts     # Generic request/response envelope + validation helpers
+│  │  ├─ src/result.ts
+│  │  └─ src/format.ts
+│  └─ ui/
+│     ├─ src/components/
+│     ├─ src/styles/tokens.css
+│     └─ src/styles/globals.css
+├─ e2e/
+├─ docs/adr/
+├─ PRODUCT.md
+├─ SPEC.md
+├─ package.json
+└─ biome.json
+```
+
+### 7.3 Boundaries
+
+- **`packages/shared`** contains no React and no Infisical behavior. It is safe for any extension.
+- **`packages/ui`** contains Base UI primitives styled with vendored shadcn recipes, plus tokens. It contains no Infisical screens. Extension-specific composition lives in the extension.
+- **`extensions/*`** may import from packages, never from another extension.
+- **The background service worker is the only code that performs network requests.** UI components call typed message operations.
+- **No generic fetch message.** The request union names only supported Infisical operations, so a compromised UI page cannot turn the background into an open proxy.
+
+### 7.4 Data flow
+
+```text
+Side panel / popup
+    │  typed message + Zod-validated payload
+    ▼
+Background service worker
+    ├─ credential/session store
+    ├─ single-flight auth (login, refresh, 401 retry)
+    ├─ Infisical API client
+    └─ normalized errors
+    │  typed response
+    ▼
+TanStack Query cache (memory only)
+    │
+    ▼
+React surfaces
+```
+
+### 7.5 Service-worker lifecycle
+
+- Chrome may terminate the worker at any time. No session state may exist only in a module-level variable.
+- Access tokens live in `chrome.storage.session`.
+- Persistent preferences live in `chrome.storage.local`.
+- Long-lived credentials live in `chrome.storage.local` **only** when “Remember on this device” is enabled; otherwise they live in `chrome.storage.session`.
+- Secret values are never written to either store.
+- Auth login is single-flight; concurrent UI requests await the same login promise.
+- A 401 may trigger one re-login and one retry. Mutations are not retried after ambiguous network failures.
+
+### 7.6 Manifest and permissions
+
+```ts
+permissions: ["storage", "sidePanel"]
+host_permissions: ["https://*.infisical.com/*"]
+optional_host_permissions: [
+  "https://*/*",
+  "http://localhost/*",
+  "http://127.0.0.1/*",
+]
+minimum_chrome_version: "114"
+```
+
+- Self-hosted origins request permission only for the configured origin, from a user gesture.
+- No content scripts. No `<all_urls>` by default. No remote code.
+- Fonts and icons are bundled locally.
+- Side panel path is registered in the manifest; popup uses `chrome.sidePanel.open` from a click.
+
+### 7.7 Storage model
+
+```ts
+// chrome.storage.local — durable preferences, never secret values
+type LocalPrefs = {
+  baseUrl: string;
+  authMethod: "universal" | "token";
+  projectId?: string;
+  environment?: string;
+  secretPath: string;
+  rememberCredentials: boolean;
+  theme: "system" | "light" | "dark";
+  recentPaths: string[];
+  recentSecretKeys: Array<{ key: string; path: string }>;
+};
+
+// chrome.storage.session — access token + transient credentials
+type SessionState = {
+  accessToken?: string;
+  tokenExpiresAt?: number;
+  credentials?: UniversalCredentials | { token: string };
+};
+```
+
+- `rememberCredentials` defaults to **off**. The UI states that credentials, when remembered, are stored unencrypted in extension storage visible to anyone with access to the browser profile.
+- Removing the connection clears tokens, credentials, recents, and query caches.
+- No secret value is included in TanStack Query persistence because there is no persistence.
+
+---
+
+## 8. Infisical API Contract
+
+All requests are made by the background worker against the configured base URL. The default is `https://us.infisical.com`; EU is `https://eu.infisical.com`; self-hosted URLs are normalized to an origin.
+
+### 8.1 Authentication
+
+**Universal Auth**
+
+```http
+POST /api/v1/auth/universal-auth/login
+Content-Type: application/json
+
+{ "clientId": "...", "clientSecret": "..." }
+```
+
+Response includes `accessToken` and `expiresIn`. The token is treated as opaque. On a 401, the worker re-authenticates once and retries the original request.
+
+**Pasted access token**
+
+The token is validated by calling the projects endpoint. It has no refresh flow; a 401 produces a reconnect state.
+
+### 8.2 Discovery
+
+```http
+GET /api/v1/projects?type=secret-manager
+GET /api/v1/projects/{projectId}
+```
+
+Project response includes environments with `name`, `slug`, and `id`. If `/projects` is forbidden, the onboarding offers manual project ID entry. If the single project fetch is also forbidden, the user enters an environment slug manually and the first secret-list request verifies the scope.
+
+### 8.3 Secrets
+
+```http
+GET    /api/v4/secrets?projectId=...&environment=...&secretPath=/&viewSecretValue=false&expandSecretReferences=false&recursive=false&includeImports=false
+GET    /api/v4/secrets/{secretName}?projectId=...&environment=...&secretPath=/&viewSecretValue=true
+POST   /api/v4/secrets/{secretName}
+PATCH  /api/v4/secrets/{secretName}
+DELETE /api/v4/secrets/{secretName}
+```
+
+Create body:
+
+```json
+{
+  "projectId": "...",
+  "environment": "dev",
+  "secretPath": "/",
+  "secretValue": "...",
+  "secretComment": "",
+  "type": "shared"
+}
+```
+
+Update body adds `newSecretName` when the key changes. Delete sends `{ projectId, environment, secretPath, type: "shared" }` as its JSON body.
+
+If the response is an `approval` object rather than a `secret`, the UI reports “Change submitted for approval” and does not assume the mutation landed.
+
+### 8.4 Normalization
+
+- Trim the base URL; require HTTPS except for `localhost`/`127.0.0.1` development.
+- Encode path segments with `encodeURIComponent`.
+- Normalize folder paths: must start with `/`; root is `/`; remove trailing slash except root; reject `..`.
+- Treat the API as the authority on key validation; surface its message without including the value.
+- Map status codes to stable UI error codes: `unauthorized`, `forbidden`, `not_found`, `rate_limited`, `validation`, `network`, `server`, `unknown`.
+- Honor `Retry-After` for 429 with a bounded, user-visible wait; do not loop.
+
+---
+
+## 9. Security and Privacy
+
+### Always
+
+- Validate every message request and response at the boundary with Zod.
+- Keep network access and credentials in the background worker.
+- Keep secret values in memory only.
+- Use `secretValueHidden`/`viewSecretValue=false` for lists.
+- Fetch a value only for reveal, copy, or edit hydration.
+- Redact values from errors, logs, and DevTools-friendly state.
+- Require explicit confirmation for deletion.
+- Request the minimum host permission for self-hosted instances.
+
+### Ask first
+
+- Adding any Chrome permission beyond `storage` and `sidePanel`.
+- Adding analytics, telemetry, crash reporting, or remote logging.
+- Changing where credentials are stored or enabling credential sync.
+- Publishing to the Chrome Web Store.
+- Adding a content script or `<all_urls>`.
+
+### Never
+
+- Commit real Infisical credentials, tokens, project IDs, or secret values.
+- Store secret values in `storage.local`, `storage.session`, `localStorage`, IndexedDB, or query persistence.
+- Log request bodies or response bodies that contain secret values.
+- Add `eval`, remote scripts, or remote fonts.
+- Retry a non-idempotent mutation after an ambiguous network failure.
+- Bypass or weaken Infisical RBAC in the client.
+
+### Threat notes
+
+- Extension storage is not a hardware vault. “Remember” is convenience, not a security boundary; the UI says so.
+- A compromised extension page can call the background, but the message union limits it to known operations and the configured origin.
+- Clipboard contents outlive the extension. The UI confirms copies but does not promise automatic clearing in V1.
+- The extension must not claim to clear Infisical audit history or hide actions from the workspace.
+
+---
+
+## 10. Commands
+
+```bash
+# Install
+bun install
+
+# Development
+bun run dev:infisical
+# → bun run --filter @k79/infisical dev
+
+# Production build
+bun run build:infisical
+# → bun run --filter @k79/infisical build
+
+# Package for loading/distribution
+bun run zip:infisical
+# → bun run --filter @k79/infisical zip
+
+# All extensions
+bun run build
+bun run zip
+
+# Quality
+bun run check          # biome check + typecheck
+bun run lint           # biome check
+bun run format         # biome format --write
+bun run typecheck      # tsc --noEmit across workspaces
+bun run test           # vitest run
+bun run test:e2e       # playwright test
+```
+
+The built extension lands in `extensions/infisical/.output/chrome-mv3`.
+
+---
+
+## 11. Code Style
+
+```ts
+// Named exports, explicit types at boundaries, values never logged.
+export async function listSecrets(scope: SecretScope): Promise<SecretSummary[]> {
+  const response = await request<{ secrets: SecretDto[] }>("/api/v4/secrets", {
+    query: {
+      projectId: scope.projectId,
+      environment: scope.environment,
+      secretPath: scope.secretPath,
+      viewSecretValue: "false",
+      expandSecretReferences: "false",
+      recursive: "false",
+      includeImports: "false",
+    },
+  });
+
+  return response.secrets.map(toSecretSummary);
+}
+```
+
+```tsx
+// shadcn's current form anatomy: Controller + Base UI Field + Zod resolver.
+const form = useForm<SecretFormValues>({
+  resolver: zodResolver(secretFormSchema),
+  mode: "onTouched",
+});
+
+<Controller
+  name="key"
+  control={form.control}
+  render={({ field, fieldState }) => (
+    <Field data-invalid={fieldState.invalid}>
+      <FieldLabel htmlFor="secret-key">Key</FieldLabel>
+      <Input {...field} id="secret-key" aria-invalid={fieldState.invalid} />
+      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+    </Field>
+  )}
+/>;
+```
+
+Conventions:
+
+- TypeScript `strict`; no `any`; prefer `unknown` + a parser at boundaries.
+- Named exports everywhere except WXT entrypoints.
+- One public function per file when the file is a service; colocate tests as `*.test.ts`.
+- UI components are function components with explicit props; no default exports.
+- Classes use Tailwind utilities and shared tokens; no ad hoc hex values in feature code.
+- Async UI states use discriminated unions, not parallel booleans.
+- Error messages are written for the user, not copied from a stack trace.
+- Use `type` for data shapes and `interface` only for extensible component contracts.
+
+---
+
+## 12. Testing Strategy
+
+### Unit (Vitest)
+
+- API client: URL/query construction, path encoding, error normalization, 401 single-retry, 429 handling.
+- Auth: token expiry, single-flight login, credential storage policy, reconnect states.
+- Domain: path normalization, search filtering, scope validation, rename payloads.
+- Storage: remember on/off, clearing connection data, no values in stored state.
+
+### Component (Vitest + Testing Library)
+
+- Secret row: keyboard selection, reveal, copy, no value in the accessible name until revealed.
+- Editor: validation, dirty state, failed save preserves draft, rename warning.
+- Delete dialog: names scope/key, cancel is default focus, destructive action requires a deliberate click.
+- Onboarding: both auth methods, manual scope fallback, inline errors.
+
+### End-to-end (Playwright)
+
+- Load the built extension in Chromium with a local mock Infisical server.
+- Onboard with Universal Auth and with a pasted token.
+- List, search, reveal, copy, create, edit, rename, delete.
+- Force 401 and verify reconnect behavior.
+- Force 403 and verify mutation controls are disabled.
+- Restart the service worker and verify session recovery.
+- Open the popup and open the side panel.
+- Capture 360 px and 800 px side-panel screenshots, plus the 380 px popup; run axe on each.
+
+### Live smoke test
+
+A manual checklist runs against a real Infisical instance when credentials are available. It is never part of CI. If no instance is available, the spec remains implemented but live verification is explicitly marked as pending.
+
+### Coverage
+
+At least 80% statements and branches for `src/api`, `src/domain`, `src/background`, and storage/session logic. Visual components are covered by interaction tests and e2e, not snapshots.
+
+---
+
+## 13. Boundaries
+
+### Always
+
+- Run `bun run check` and relevant tests before calling a task complete.
+- Validate inputs at every external boundary.
+- Keep project/environment/path visible before mutations.
+- Preserve keyboard access and visible focus.
+- Update this spec before changing scope, storage policy, or permissions.
+
+### Ask first
+
+- Adding dependencies beyond the approved stack.
+- Adding Chrome permissions or host permissions.
+- Adding telemetry, remote services, or a backend.
+- Changing the credential storage model.
+- Changing the extension name or public brand.
+
+### Never
+
+- Commit secrets, tokens, or real project identifiers.
+- Store secret values persistently.
+- Add destructive actions without confirmation.
+- Add `eval`, remote code, or remote fonts.
+- Delete failing tests to get a green build.
+
+---
+
+## 14. Acceptance Criteria
+
+### Build and packaging
+
+- [ ] `bun install` completes with a committed `bun.lock`.
+- [ ] `bun run check` passes.
+- [ ] `bun run test` passes.
+- [ ] `bun run build:infisical` produces `extensions/infisical/.output/chrome-mv3`.
+- [ ] The unpacked build loads in Chrome 114+ with no manifest errors.
+- [ ] `bun run test:e2e` passes against the mock server.
+
+### Connection
+
+- [ ] Universal Auth connects to a real or mock Infisical instance and obtains a token.
+- [ ] Pasted-token auth connects and reports invalid/expired tokens honestly.
+- [ ] US, EU, and self-hosted base URLs work; self-hosted permission is requested per origin.
+- [ ] Project and environment discovery works; a 403 offers the manual fallback.
+- [ ] Token expiry triggers one re-login and retry; a failed retry surfaces reconnect.
+
+### Secrets
+
+- [ ] Listing never fetches values.
+- [ ] Search filters by key, path, and comment without a network request.
+- [ ] Reveal and copy fetch exactly one secret and keep the value in memory only.
+- [ ] Create, edit, rename, and delete are reflected in Infisical and in the list.
+- [ ] A failed mutation preserves the draft and does not report success.
+- [ ] A secret-protection `approval` response is reported as pending, not saved.
+- [ ] Delete requires confirmation that names key, project, environment, and path.
+- [ ] 403 disables mutation controls with an explanation.
+- [ ] “Conceal all” removes every revealed value from the UI.
+
+### UX and accessibility
+
+- [ ] Side panel works at 360 px and 800 px without horizontal page scroll.
+- [ ] Popup works at 380 px and opens the full panel.
+- [ ] All primary flows are keyboard-completable.
+- [ ] Focus is visible and never clipped; icon-only controls have accessible names.
+- [ ] Reduced motion is respected.
+- [ ] Axe reports no serious or critical issues on onboarding, workspace, editor, and popup.
+- [ ] Loading, empty, no-results, offline, unauthorized, forbidden, and server-error states exist.
+
+### Security
+
+- [ ] No secret values appear in `chrome.storage.local`, `chrome.storage.session`, `localStorage`, IndexedDB, logs, or error text.
+- [ ] No generic fetch or arbitrary-URL message is exposed.
+- [ ] No content script or `<all_urls>` permission is present in the production manifest.
+- [ ] Clearing the connection removes credentials, tokens, recents, and in-memory caches.
+
+### Design
+
+- [ ] The Impeccable direction contract is recorded before UI implementation.
+- [ ] The finish review passes at the shipped sizes.
+- [ ] `DESIGN.md` is written from the built surface after the review.
+- [ ] The UI does not use the banned neon/glass/gradient-text clichés in §6.
+
+---
+
+## 15. Risks and Mitigations
+
+| Risk | Impact | Mitigation |
+| --- | --- | --- |
+| Machine identity cannot list projects | Onboarding dead-ends | Manual project ID/environment fallback; test the 403 path. |
+| Self-hosted CORS/host permissions | Requests fail | All requests in background; request optional host permission for the exact origin. |
+| Service worker terminated mid-flow | Lost token/session | Persist only session token and prefs; rehydrate; single-flight auth. |
+| Secret values leak into logs/errors | Critical | Central redaction, no body logging, tests that scan storage and captured console output. |
+| Mutation retry duplicates a write | Data integrity | Re-auth only on 401; never retry ambiguous network failures. |
+| Large secret lists | Sluggish panel | Local filtering; virtualize the list if it exceeds 200 rows. |
+| Chrome side panel width changes | Broken layout | Structural breakpoints; test 360/480/800; no fixed page widths. |
+| Secret protection approvals | UI reports false success | Detect `approval` response and show pending state. |
+| Name/brand conflict | Distribution issue | Working name only; confirm before publishing. |
+
+---
+
+## 16. Open Questions
+
+1. **Live verification:** Is there an Infisical instance and machine identity available for a live smoke test? If not, the build ships against the documented API contract and mock server, and live verification stays marked pending.
+2. **Distribution:** Is V1 internal/unpacked only, or should the repo also prepare a Chrome Web Store package and privacy disclosures?
+3. **Name:** Is “Infisical Console” acceptable, or should it be a K79-branded name such as “K79 Vault for Infisical”?
+4. **Access-token semantics:** Should the token method be labeled “Access token” only, or explicitly “Personal Access Token” based on the user’s Infisical edition?
+5. **Clipboard clearing:** Should a later version auto-clear the clipboard after a timeout? V1 does not, because reliable background clearing requires an offscreen document.
+6. **Demo mode:** Confirm that a development-only synthetic demo mode is acceptable for UI review and e2e.
+
+---
+
+## 17. Assumptions
+
+- Chrome is the only target for V1; Manifest V3 is required.
+- The user has permission to create/use an Infisical Machine Identity with access to the target project.
+- Shared secrets only; personal overrides and dynamic secrets are later work.
+- The side panel is the primary surface; the popup is deliberately thin.
+- English-only UI for V1.
+- No backend service is added. The extension talks directly to Infisical from the background worker.
+- “Remember on this device” is off by default.
+- The repo is private until a license and distribution decision are made.
+
+---
+
+## 18. Approval
+
+Approve this spec to start the implementation plan and scaffolding. Changes to scope, security posture, permissions, or the visual direction should be made here first, then reflected in the plan and code.

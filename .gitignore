@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Build and test output
+.output/
+.wxt/
+dist/
+coverage/
+playwright-report/
+test-results/
+*.zip
+
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+.infisical.json
+*.pem
+*.key
+
+# Local tooling
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Impeccable review artifacts stay local
+.impeccable/review/
+.impeccable/mocks/

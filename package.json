@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "name": "k79-extensions",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "bun@1.4.4",
+  "workspaces": [
+    "extensions/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:infisical": "bun run --filter @k79/infisical dev",
+    "build:infisical": "bun run --filter @k79/infisical build",
+    "zip:infisical": "bun run --filter @k79/infisical zip",
+    "build": "bun run --filter '*' build",
+    "zip": "bun run --filter '*' zip",
+    "check": "biome check . && bun run typecheck",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "typecheck": "bun run --filter '*' typecheck",
+    "test": "vitest run",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {}
+}
