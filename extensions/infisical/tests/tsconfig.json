@@ -1,11 +1,10 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "baseUrl": "..",
     "paths": {
-      "@/*": ["src/*"],
-      "@k79/shared": ["../../packages/shared/src/index.ts"],
-      "@k79/ui": ["../../packages/ui/src/index.ts"]
+      "@/*": ["../src/*"],
+      "@k79/shared": ["../../../packages/shared/src/index.ts"],
+      "@k79/ui": ["../../../packages/ui/src/index.ts"]
     },
     "types": ["node", "chrome"]
   },

@@ -237,7 +237,7 @@ export function Onboarding({
       </aside>
 
       <main className="min-h-0 overflow-y-auto">
-        <div className="mx-auto flex min-h-full w-full max-w-[480px] flex-col px-5 py-7 min-[720px]:px-10 min-[720px]:py-10">
+        <div className="mx-auto flex min-h-full w-full max-w-120 flex-col px-5 py-7 min-[720px]:px-10 min-[720px]:py-10">
           {step === "connect" ? (
             <section className="animate-fade-in">
               <div className="flex items-center gap-2">
@@ -632,7 +632,7 @@ export function Onboarding({
                 ].map((item) => (
                   <div key={item.label} className="flex items-center gap-3 px-3 py-2.5">
                     <Icon icon={item.icon} size={14} className="text-muted" />
-                    <dt className="w-24 shrink-0 text-[10px] uppercase tracking-[0.1em] text-muted">
+                    <dt className="w-24 shrink-0 text-[10px] uppercase tracking-widest text-muted">
                       {item.label}
                     </dt>
                     <dd className="min-w-0 truncate font-mono text-[11px] text-ink">

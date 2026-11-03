@@ -1,7 +1,6 @@
 {
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "baseUrl": ".",
     "paths": {
       "@/*": ["extensions/infisical/src/*"],
       "@k79/shared": ["packages/shared/src/index.ts"],
