@@ -44,7 +44,7 @@ bun run test
 bun run test:e2e
 
 bunx vitest run path/to/file.test.ts
-bunx playwright test e2e/onboarding.spec.ts
+bunx playwright test extensions/infisical/tests/e2e/extension.spec.ts
 ```
 
 Build output: `extensions/infisical/.output/chrome-mv3`.
@@ -55,10 +55,10 @@ Environment: Windows + PowerShell. Quote paths with spaces.
 
 ```text
 extensions/infisical/
-  entrypoints/{background.ts,sidepanel/,popup/}
+  src/entrypoints/{background.ts,sidepanel/,popup/}
   src/{api,background,features,components,lib,styles,demo}/
+  tests/{api,background,features,lib,e2e,live}/
 packages/{shared,ui}/
-e2e/
 docs/adr/
 ```
 
@@ -67,8 +67,21 @@ Rules:
 - `packages/shared`: no React, no Infisical.
 - `packages/ui`: accessible primitives + tokens, no Infisical screens.
 - Extensions may import packages; never import another extension.
-- Infisical code stays in `extensions/infisical`.
+- Infisical code, tests, fixtures, demo data, and extension-specific UI stay in `extensions/infisical`.
+- Tests mirror source under `extensions/*/tests/`; never colocate `*.test.*` in `src` or create a root `tests/` folder.
 - No `utils.ts` dumping ground.
+
+## Extension Isolation
+
+The boundary is intentional: an extension is a self-contained product; shared packages are infrastructure, not a junk drawer.
+
+- **If only one extension uses it, it belongs to that extension.** Example: a secret row, environment rail, Infisical DTO, or Infisical test stays in `extensions/infisical`.
+- **If at least two extensions use it, it may become shared.** Example: a Button, Dialog, Field, token sheet, or generic Result helper may live in `packages/*`.
+- **Boundary test:** delete the Infisical extension mentally. Any file that becomes unused does not belong in `packages/*` or at the repo root.
+- **Tests are owned by their extension.** `extensions/infisical/tests/**` only. A shared test utility goes into `packages/testing` only when two extensions actually need it.
+- **No cross-extension imports.** An extension may import `@k79/*` packages; packages may never import an extension.
+- **No extension-specific code, tests, fixtures, screenshots, assets, strings, or secret/project names** in shared packages or at the repo root.
+- Extension-specific implementation notes and surface briefs stay with the extension.
 
 ## Workflow
 
@@ -88,7 +101,7 @@ Skills: `spec-driven-development`, `planning-and-task-breakdown`, `incremental-i
 - Service worker may die: rehydrate. Access token → `storage.session`; prefs → `storage.local`; long-lived credentials → `storage.local` only when “Remember” is on, else `storage.session`; secret values → memory only.
 - Auth login is single-flight. 401 → one re-login + one retry. Never retry a mutation after an ambiguous network failure.
 - TanStack Query = server state; React context = session/scope; component state = ephemeral UI. No Redux/Zustand/MobX without approval.
-- Start permissions: `storage`, `sidePanel`; `host_permissions: https://*.infisical.com/*`; optional exact-origin permission for self-hosted; `minimum_chrome_version: 114`.
+- Start permissions: `storage`, `sidePanel`; `host_permissions: https://*.infisical.com/*`; optional exact-origin permission for self-hosted; `minimum_chrome_version: 116`.
 - No remote code or fonts. Bundle locally.
 - API: default `https://us.infisical.com`; EU `https://eu.infisical.com`; self-hosted HTTPS (localhost HTTP only). Encode path segments. Normalize paths: leading `/`, root `/`, no trailing slash except root, reject `..`.
 - Lists use `viewSecretValue=false`. Fetch one value only for reveal/copy/edit.

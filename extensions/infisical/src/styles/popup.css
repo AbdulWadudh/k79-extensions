@@ -1,0 +1,10 @@
+html,
+body,
+#root {
+  width: 380px;
+  min-height: 480px;
+}
+
+body.popup-window {
+  overflow: hidden;
+}

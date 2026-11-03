@@ -1,0 +1,16 @@
+@import "tailwindcss";
+@import "@k79/ui/styles.css";
+
+@source "../entrypoints/**/*.{ts,tsx,html}";
+@source "../**/*.{ts,tsx}";
+@source "../../../../packages/ui/src/**/*.{ts,tsx}";
+
+html,
+body,
+#root {
+  min-width: 320px;
+}
+
+body {
+  overflow: hidden;
+}

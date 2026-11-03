@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@k79/shared": ["../../packages/shared/src/index.ts"],
+      "@k79/ui": ["../../packages/ui/src/index.ts"]
+    },
+    "types": ["chrome"]
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "wxt.config.ts", ".wxt/**/*.ts", ".wxt/**/*.d.ts"],
+  "exclude": ["node_modules", ".output"]
+}

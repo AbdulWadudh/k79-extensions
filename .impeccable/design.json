@@ -1,0 +1,196 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-03T00:00:00.000Z",
+  "title": "Design System: Infisical Console",
+  "extensions": {
+    "colorMeta": {
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ledger Ink",
+        "canonical": "#17231d",
+        "tonalRamp": [
+          "#0d1411",
+          "#17231d",
+          "#28372f",
+          "#3d4c43",
+          "#5d6b62",
+          "#8b978e",
+          "#c0c7c0",
+          "#f2efe6"
+        ]
+      },
+      "bottle-green": {
+        "role": "primary",
+        "displayName": "Bottle Green",
+        "canonical": "#184b37",
+        "tonalRamp": [
+          "#0b241a",
+          "#103527",
+          "#184b37",
+          "#276148",
+          "#3b7b5e",
+          "#63a184",
+          "#a8cdb8",
+          "#edf4ee"
+        ]
+      },
+      "vermilion": {
+        "role": "primary",
+        "displayName": "Vermilion Seal",
+        "canonical": "#a63e28",
+        "tonalRamp": [
+          "#3c120b",
+          "#641e13",
+          "#8b2e1c",
+          "#a63e28",
+          "#c35b43",
+          "#de8a76",
+          "#f0beb2",
+          "#fdf0ec"
+        ]
+      },
+      "bone-canvas": {
+        "role": "neutral",
+        "displayName": "Bone Canvas",
+        "canonical": "#f2efe6",
+        "tonalRamp": [
+          "#242119",
+          "#4b463b",
+          "#756f61",
+          "#9c9586",
+          "#c2bcae",
+          "#d8d3c5",
+          "#ece9de",
+          "#f2efe6"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Onboarding and empty-state titles only."
+      },
+      "body": { "displayName": "Body", "purpose": "Descriptions, comments, and helper copy." },
+      "label": { "displayName": "Field Label", "purpose": "Compact uppercase labels." },
+      "mono": {
+        "displayName": "Ledger Mono",
+        "purpose": "Keys, values, paths, counts, and timestamps."
+      }
+    },
+    "shadows": [
+      {
+        "name": "overlay",
+        "value": "0 18px 60px rgba(8, 18, 13, 0.18)",
+        "purpose": "Dialogs and transient status only."
+      }
+    ],
+    "motion": [
+      { "name": "state", "value": "150ms ease-out", "purpose": "Hover, focus, and state changes." },
+      {
+        "name": "enter",
+        "value": "180ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Push navigation and toast entry."
+      }
+    ],
+    "breakpoints": [
+      { "name": "compact", "value": "480px" },
+      { "name": "rail", "value": "640px" },
+      { "name": "split", "value": "700px" },
+      { "name": "comfortable", "value": "800px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Connect, save, create, and open actions.",
+      "html": "<button class=\"ds-btn-primary\">Connect and continue</button>",
+      "css": ".ds-btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:36px;padding:8px 16px;border:1px solid #184b37;border-radius:5px;background:#184b37;color:#fffdf7;font:600 12px/1.2 'Segoe UI',sans-serif;cursor:pointer;transition:background .15s,transform .15s}.ds-btn-primary:hover{background:#103527}.ds-btn-primary:active{transform:translateY(1px)}.ds-btn-primary:focus-visible{outline:none;box-shadow:0 0 0 2px #f2efe6,0 0 0 4px #184b37}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Retry, cancel, and non-destructive secondary actions.",
+      "html": "<button class=\"ds-btn-secondary\">Cancel</button>",
+      "css": ".ds-btn-secondary{display:inline-flex;align-items:center;justify-content:center;height:36px;padding:8px 16px;border:1px solid #b9b3a3;border-radius:5px;background:#fffdf7;color:#17231d;font:600 12px/1.2 'Segoe UI',sans-serif;cursor:pointer;transition:background .15s,border-color .15s}.ds-btn-secondary:hover{background:#faf8f1;border-color:#3d4c43}.ds-btn-secondary:focus-visible{outline:none;box-shadow:0 0 0 2px #f2efe6,0 0 0 4px #184b37}"
+    },
+    {
+      "name": "Danger Button",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "Deletion confirmation only.",
+      "html": "<button class=\"ds-btn-danger\">Delete secret</button>",
+      "css": ".ds-btn-danger{display:inline-flex;align-items:center;justify-content:center;height:36px;padding:8px 16px;border:1px solid #a63e28;border-radius:5px;background:#a63e28;color:#fffaf2;font:600 12px/1.2 'Segoe UI',sans-serif;cursor:pointer;transition:background .15s}.ds-btn-danger:hover{background:#8b2e1c}.ds-btn-danger:focus-visible{outline:none;box-shadow:0 0 0 2px #f2efe6,0 0 0 4px #a63e28}"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "One-line values and search fields.",
+      "html": "<input class=\"ds-input\" placeholder=\"Machine Identity Client ID\" />",
+      "css": ".ds-input{height:36px;width:100%;padding:8px 12px;border:1px solid #b9b3a3;border-radius:5px;background:#fffdf7;color:#17231d;font:400 13px/1.3 'Segoe UI',sans-serif;box-sizing:border-box}.ds-input::placeholder{color:#707a71}.ds-input:focus-visible{outline:none;border-color:#184b37;box-shadow:0 0 0 2px rgba(24,75,55,.18)}"
+    },
+    {
+      "name": "Status Badge",
+      "kind": "chip",
+      "refersTo": "badge",
+      "description": "Version, shared, manual, and environment labels.",
+      "html": "<span class=\"ds-badge\">SHARED</span>",
+      "css": ".ds-badge{display:inline-flex;align-items:center;height:20px;padding:2px 6px;border:1px solid rgba(24,75,55,.3);border-radius:3px;background:#dfe8df;color:#184b37;font:600 10px/1 'Cascadia Mono',monospace;letter-spacing:.08em;text-transform:uppercase}"
+    },
+    {
+      "name": "Secret Row",
+      "kind": "custom",
+      "description": "The primary index entry. Value is always masked until the inspector is asked to reveal it.",
+      "html": "<div class=\"ds-secret-row\"><div class=\"ds-secret-main\"><div class=\"ds-secret-key\">STRIPE_SECRET_KEY <span class=\"ds-secret-version\">v4</span></div><div class=\"ds-secret-meta\">•••••••••••• <span>·</span> /payments <span>·</span> 2 minutes ago</div></div><div class=\"ds-secret-actions\">⧉ ◉</div></div>",
+      "css": ".ds-secret-row{display:flex;align-items:center;gap:10px;min-height:46px;padding:8px 12px;border-bottom:1px solid #d8d3c5;background:#faf8f1}.ds-secret-main{min-width:0;flex:1}.ds-secret-key{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#17231d;font:500 12px/1.4 'Cascadia Mono',monospace}.ds-secret-version{margin-left:6px;padding:1px 5px;border:1px solid #d8d3c5;border-radius:3px;color:#4f5e55;font-size:9px;letter-spacing:.08em}.ds-secret-meta{display:flex;gap:6px;margin-top:2px;color:#4f5e55;font:400 10px/1.4 'Cascadia Mono',monospace}.ds-secret-actions{display:flex;gap:2px;color:#4f5e55;font-size:13px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Secure Ledger",
+    "overview": "Infisical Console is a working record of sensitive entries, not a second dashboard. It borrows the calm of a well-kept ledger: warm paper, ink, hairline rules, tabular numbers, and a dark spine that keeps the environment visible without competing with the task. The interface is intentionally quiet. Colour is a signal, not decoration.",
+    "keyCharacteristics": [
+      "Bone paper and deep forest ink; one green accent and one vermilion risk colour.",
+      "Hairline rules and tonal layers instead of shadows and cards.",
+      "An index-and-leaf layout: environment rail, secret index, and inspector.",
+      "Monospace only for keys, values, paths, counts, and timestamps.",
+      "Masked values, explicit reveal, deliberate deletion."
+    ],
+    "rules": [
+      {
+        "name": "The One Risk Colour Rule",
+        "body": "Vermilion appears only on destructive actions, deletion, and destructive error states. It is never used for decoration or emphasis.",
+        "section": "colors"
+      },
+      {
+        "name": "The Paper Ground Rule",
+        "body": "Large surfaces stay paper-toned. Depth comes from hairlines and one tonal step, not from a gradient.",
+        "section": "colors"
+      },
+      {
+        "name": "The Data Is Monospace Rule",
+        "body": "Monospace is reserved for data and measurement. Never set prose, labels, or buttons in it.",
+        "section": "typography"
+      },
+      {
+        "name": "The Hairline Rule",
+        "body": "If a border can explain the relationship, do not add a shadow.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do show project, environment, and path before any read, write, or delete.",
+      "Do keep values masked at a fixed width so length is not leaked.",
+      "Do use hairlines and tonal steps for structure.",
+      "Do use Hugeicons at one stroke weight and label every icon-only control."
+    ],
+    "donts": [
+      "Don't use neon-on-black, glassmorphism, gradient text, or glow.",
+      "Don't use border-left/right accents thicker than 1px on rows or cards.",
+      "Don't put the main editor in a centered modal.",
+      "Don't show or log a secret value without an explicit reveal/copy action."
+    ]
+  }
+}

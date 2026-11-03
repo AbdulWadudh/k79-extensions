@@ -3,6 +3,7 @@
   "name": "k79-extensions",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "packageManager": "bun@1.4.4",
   "workspaces": [
     "extensions/*",
@@ -17,9 +18,29 @@
     "check": "biome check . && bun run typecheck",
     "lint": "biome check .",
     "format": "biome format --write .",
-    "typecheck": "bun run --filter '*' typecheck",
+    "typecheck": "bun run typecheck:tests && bun run --filter '*' typecheck",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "bun run build:infisical && playwright test",
+    "test:live": "bun run extensions/infisical/tests/live/ui-check.ts",
+    "smoke": "bun run extensions/infisical/tests/live/api-smoke.ts",
+    "typecheck:tests": "tsc --noEmit -p extensions/infisical/tests/tsconfig.json"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@biomejs/biome": "^2.6.4",
+    "@playwright/test": "^1.64.1",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.8",
+    "@types/chrome": "^0.3.7",
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.2.1",
+    "@vitest/coverage-v8": "^5.1.0",
+    "jsdom": "^30.1.3",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.5",
+    "vitest": "^5.1.0"
+  }
 }

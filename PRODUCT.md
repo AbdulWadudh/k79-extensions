@@ -35,7 +35,7 @@ A fast, keyboard-first companion to Infisical that keeps the dangerous parts del
 
 Confirmed for the first usable slice:
 
-- Two authentication methods: Universal Auth with a Machine Identity Client ID + Client Secret, and a pasted Infisical access token.
+- Universal Auth only: a Machine Identity Client ID + Client Secret. Infisical has deprecated token-based authentication; do not add a pasted-token fallback.
 - Configurable base URL for Cloud (US/EU) and self-hosted instances.
 - Project and environment selection, with a manual project-ID/environment-slug fallback when listing is forbidden.
 - Shared-secret CRUD: list, search, reveal, copy, create, edit, delete.
@@ -44,7 +44,7 @@ Confirmed for the first usable slice:
 - Explicit confirmation before deletion.
 - No secret values in persistent storage, logs, telemetry, or error text.
 - English-only UI for V1.
-- Chrome 114+ on Manifest V3. Internal/unpacked distribution first.
+- Chrome 116+ on Manifest V3. Internal/unpacked distribution first.
 
 Out of scope for V1:
 

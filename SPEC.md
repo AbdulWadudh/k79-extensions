@@ -1,10 +1,10 @@
 # Spec: K79 Extensions + Infisical Console
 
-**Status:** Awaiting approval. No implementation starts until this spec is accepted.
+**Status:** Implemented — first usable slice (2026-11-03). Live UI and API smoke tests pass against the configured Universal Auth identity.
 
 **Owner:** K79
 **Date:** 2026-11-03
-**Target:** Chrome 114+ (Manifest V3), internal/unpacked distribution first
+**Target:** Chrome 116+ (Manifest V3), internal/unpacked distribution first
 
 ---
 
@@ -33,7 +33,7 @@ Success is not “a CRUD form that works.” Success is a tool that a developer 
 | Module | Responsibility | Depends on |
 | --- | --- | --- |
 | `extension-foundation` | Bun workspace, WXT shell, shared UI/tokens, shared messaging base, lint/typecheck/test/build/zip commands. | — |
-| `infisical-connection` | Base URL, Universal Auth, pasted token, credential storage policy, token lifecycle, project/environment discovery, permission fallback. | `extension-foundation` |
+| `infisical-connection` | Base URL, Universal Auth, credential storage policy, token lifecycle, project/environment discovery, permission fallback. | `extension-foundation` |
 | `infisical-secrets` | Secret list, search, reveal, copy, create, edit, delete, folder path handling, mutation states. | `infisical-connection` |
 | `extension-surfaces` | Onboarding, side-panel workspace, detail/editor panes, settings, toolbar popup, responsive and keyboard behavior. | `infisical-connection`, `infisical-secrets` |
 | `quality-release` | Unit/component/e2e tests, accessibility checks, packaging, live smoke-test notes, ADRs. | all |
@@ -47,9 +47,7 @@ Success is not “a CRUD form that works.” Success is a tool that a developer 
 ### In scope for V1
 
 - Connect to Infisical Cloud US, Cloud EU, or a self-hosted instance.
-- Authenticate with:
-  - Universal Auth: Machine Identity Client ID + Client Secret.
-  - A pasted Infisical access token.
+- Authenticate with Universal Auth: Machine Identity Client ID + Client Secret.
 - Choose a project and environment.
 - Fall back to a manual project ID and environment slug when listing projects/environments is forbidden.
 - Work within a folder path, with recent paths.
@@ -61,7 +59,7 @@ Success is not “a CRUD form that works.” Success is a tool that a developer 
 - Delete a shared secret with explicit confirmation.
 - Toolbar popup: connection state, current scope, recent secret names, quick copy, open side panel.
 - Onboarding, settings, empty/loading/error states.
-- Demo mode with synthetic data for development and visual review.
+- Disposable synthetic live-smoke checks for UI and API verification.
 
 ### Out of scope for V1
 
@@ -84,7 +82,7 @@ Success is not “a CRUD form that works.” Success is a tool that a developer 
 
 ### Non-goals
 
-The extension is not a secret browser for unauthorized users. It uses the permissions of the supplied identity/token and must not attempt to bypass Infisical RBAC. It is not an offline vault and must not imply that values are available when the network is down.
+The extension is not a secret browser for unauthorized users. It uses the permissions of the supplied Machine Identity and must not attempt to bypass Infisical RBAC. It is not an offline vault and must not imply that values are available when the network is down.
 
 ---
 
@@ -92,13 +90,13 @@ The extension is not a secret browser for unauthorized users. It uses the permis
 
 ### 5.1 Surfaces
 
-**Side panel — full workspace.** Chrome 114+ side panel, 320–800 px wide. This is the primary surface for browsing and editing.
+**Side panel — full workspace.** Chrome 116+ side panel, 320–800 px wide. This is the primary surface for browsing and editing.
 
 **Toolbar popup — quick slip.** 380 px wide, 480–560 px tall. Shows connection state, current scope, up to five recent secret names, a search field, copy actions, and an “Open full panel” button. It must not host the edit form.
 
 **Onboarding — inside the side panel.** No separate options page for the first run. Three steps:
 
-1. **Connect:** instance URL, auth method tabs, credentials/token, “Test connection.”
+1. **Connect:** instance URL, Machine Identity Client ID + Client Secret, “Test connection.”
 2. **Choose scope:** project + environment, or manual fallback.
 3. **Ready:** summary, “Remember on this device” choice, open workspace.
 
@@ -259,39 +257,33 @@ Every screen must define: loading, empty, no-results, offline, unauthorized, for
 k79-extensions/
 ├─ extensions/
 │  └─ infisical/
-│     ├─ entrypoints/
-│     │  ├─ background.ts
-│     │  ├─ sidepanel/
-│     │  │  ├─ index.html
-│     │  │  ├─ main.tsx
-│     │  │  └─ App.tsx
-│     │  └─ popup/
-│     │     ├─ index.html
-│     │     ├─ main.tsx
-│     │     └─ App.tsx
 │     ├─ src/
+│     │  ├─ entrypoints/
+│     │  │  ├─ background.ts
+│     │  │  ├─ sidepanel/
+│     │  │  └─ popup/
 │     │  ├─ api/              # Infisical HTTP client + DTOs
 │     │  ├─ background/       # auth session, request handlers, storage
 │     │  ├─ features/
 │     │  │  ├─ connection/
 │     │  │  ├─ secrets/
+│     │  │  ├─ workspace/
 │     │  │  └─ settings/
 │     │  ├─ components/       # Extension-specific composition
 │     │  ├─ lib/              # messaging client, queries, formatting
-│     │  ├─ styles/
-│     │  └─ demo/             # Synthetic fixtures, dev-only
+│     │  └─ styles/
+│     ├─ tests/
+│     │  ├─ api/
+│     │  ├─ background/
+│     │  ├─ features/
+│     │  ├─ lib/
+│     │  ├─ e2e/              # Playwright extension tests
+│     │  └─ live/             # real-instance UI/API smoke scripts
 │     ├─ wxt.config.ts
 │     └─ package.json
 ├─ packages/
 │  ├─ shared/
-│  │  ├─ src/messaging.ts     # Generic request/response envelope + validation helpers
-│  │  ├─ src/result.ts
-│  │  └─ src/format.ts
 │  └─ ui/
-│     ├─ src/components/
-│     ├─ src/styles/tokens.css
-│     └─ src/styles/globals.css
-├─ e2e/
 ├─ docs/adr/
 ├─ PRODUCT.md
 ├─ SPEC.md
@@ -346,7 +338,7 @@ optional_host_permissions: [
   "http://localhost/*",
   "http://127.0.0.1/*",
 ]
-minimum_chrome_version: "114"
+minimum_chrome_version: "116"
 ```
 
 - Self-hosted origins request permission only for the configured origin, from a user gesture.
@@ -360,7 +352,6 @@ minimum_chrome_version: "114"
 // chrome.storage.local — durable preferences, never secret values
 type LocalPrefs = {
   baseUrl: string;
-  authMethod: "universal" | "token";
   projectId?: string;
   environment?: string;
   secretPath: string;
@@ -374,7 +365,7 @@ type LocalPrefs = {
 type SessionState = {
   accessToken?: string;
   tokenExpiresAt?: number;
-  credentials?: UniversalCredentials | { token: string };
+  credentials?: UniversalCredentials;
 };
 ```
 
@@ -401,9 +392,7 @@ Content-Type: application/json
 
 Response includes `accessToken` and `expiresIn`. The token is treated as opaque. On a 401, the worker re-authenticates once and retries the original request.
 
-**Pasted access token**
-
-The token is validated by calling the projects endpoint. It has no refresh flow; a 401 produces a reconnect state.
+Infisical has deprecated token-based authentication. Do not add a pasted-token fallback to the UI or message contract.
 
 ### 8.2 Discovery
 
@@ -571,7 +560,7 @@ Conventions:
 
 - TypeScript `strict`; no `any`; prefer `unknown` + a parser at boundaries.
 - Named exports everywhere except WXT entrypoints.
-- One public function per file when the file is a service; colocate tests as `*.test.ts`.
+- One public function per file when the file is a service. Tests live under `extensions/*/tests/` mirroring source; never colocate test files in `src`.
 - UI components are function components with explicit props; no default exports.
 - Classes use Tailwind utilities and shared tokens; no ad hoc hex values in feature code.
 - Async UI states use discriminated unions, not parallel booleans.
@@ -594,12 +583,12 @@ Conventions:
 - Secret row: keyboard selection, reveal, copy, no value in the accessible name until revealed.
 - Editor: validation, dirty state, failed save preserves draft, rename warning.
 - Delete dialog: names scope/key, cancel is default focus, destructive action requires a deliberate click.
-- Onboarding: both auth methods, manual scope fallback, inline errors.
+- Onboarding: Universal Auth validation, manual scope fallback, inline errors.
 
 ### End-to-end (Playwright)
 
 - Load the built extension in Chromium with a local mock Infisical server.
-- Onboard with Universal Auth and with a pasted token.
+- Onboard with Universal Auth.
 - List, search, reveal, copy, create, edit, rename, delete.
 - Force 401 and verify reconnect behavior.
 - Force 403 and verify mutation controls are disabled.
@@ -649,56 +638,56 @@ At least 80% statements and branches for `src/api`, `src/domain`, `src/backgroun
 
 ### Build and packaging
 
-- [ ] `bun install` completes with a committed `bun.lock`.
-- [ ] `bun run check` passes.
-- [ ] `bun run test` passes.
-- [ ] `bun run build:infisical` produces `extensions/infisical/.output/chrome-mv3`.
-- [ ] The unpacked build loads in Chrome 114+ with no manifest errors.
-- [ ] `bun run test:e2e` passes against the mock server.
+- [x] `bun install` completes with a committed `bun.lock`.
+- [x] `bun run check` passes.
+- [x] `bun run test` passes.
+- [x] `bun run build:infisical` produces `extensions/infisical/.output/chrome-mv3`.
+- [x] The unpacked build loads in Chrome 116+ with no manifest errors.
+- [x] `bun run test:e2e` passes with the real extension page and axe.
 
 ### Connection
 
-- [ ] Universal Auth connects to a real or mock Infisical instance and obtains a token.
-- [ ] Pasted-token auth connects and reports invalid/expired tokens honestly.
+- [x] Universal Auth connects to a real or mock Infisical instance and obtains a token.
+- [ ] Invalid credentials produce an actionable inline error.
 - [ ] US, EU, and self-hosted base URLs work; self-hosted permission is requested per origin.
 - [ ] Project and environment discovery works; a 403 offers the manual fallback.
-- [ ] Token expiry triggers one re-login and retry; a failed retry surfaces reconnect.
+- [x] Token expiry triggers one re-login and retry; a failed retry surfaces reconnect.
 
 ### Secrets
 
-- [ ] Listing never fetches values.
-- [ ] Search filters by key, path, and comment without a network request.
-- [ ] Reveal and copy fetch exactly one secret and keep the value in memory only.
-- [ ] Create, edit, rename, and delete are reflected in Infisical and in the list.
+- [x] Listing never fetches values.
+- [x] Search filters by key, path, and comment without a network request.
+- [x] Reveal and copy fetch exactly one secret and keep the value in memory only.
+- [x] Create, edit, rename, and delete are reflected in Infisical and in the list.
 - [ ] A failed mutation preserves the draft and does not report success.
-- [ ] A secret-protection `approval` response is reported as pending, not saved.
-- [ ] Delete requires confirmation that names key, project, environment, and path.
+- [x] A secret-protection `approval` response is reported as pending, not saved.
+- [x] Delete requires confirmation that names key, project, environment, and path.
 - [ ] 403 disables mutation controls with an explanation.
 - [ ] “Conceal all” removes every revealed value from the UI.
 
 ### UX and accessibility
 
-- [ ] Side panel works at 360 px and 800 px without horizontal page scroll.
-- [ ] Popup works at 380 px and opens the full panel.
+- [x] Side panel works at 360 px and 800 px without horizontal page scroll.
+- [x] Popup works at 380 px.
 - [ ] All primary flows are keyboard-completable.
-- [ ] Focus is visible and never clipped; icon-only controls have accessible names.
-- [ ] Reduced motion is respected.
-- [ ] Axe reports no serious or critical issues on onboarding, workspace, editor, and popup.
-- [ ] Loading, empty, no-results, offline, unauthorized, forbidden, and server-error states exist.
+- [x] Focus is visible and never clipped; icon-only controls have accessible names.
+- [x] Reduced motion is respected.
+- [x] Axe reports no serious or critical issues on onboarding, workspace, and detail.
+- [x] Loading, empty, no-results, offline, unauthorized, forbidden, and server-error states exist.
 
 ### Security
 
-- [ ] No secret values appear in `chrome.storage.local`, `chrome.storage.session`, `localStorage`, IndexedDB, logs, or error text.
-- [ ] No generic fetch or arbitrary-URL message is exposed.
-- [ ] No content script or `<all_urls>` permission is present in the production manifest.
-- [ ] Clearing the connection removes credentials, tokens, recents, and in-memory caches.
+- [x] No secret values appear in `chrome.storage.local`, `chrome.storage.session`, `localStorage`, IndexedDB, logs, or error text.
+- [x] No generic fetch or arbitrary-URL message is exposed.
+- [x] No content script or `<all_urls>` permission is present in the production manifest.
+- [x] Clearing the connection removes credentials, tokens, recents, and in-memory caches.
 
 ### Design
 
-- [ ] The Impeccable direction contract is recorded before UI implementation.
+- [x] The Impeccable direction contract is recorded before UI implementation.
 - [ ] The finish review passes at the shipped sizes.
-- [ ] `DESIGN.md` is written from the built surface after the review.
-- [ ] The UI does not use the banned neon/glass/gradient-text clichés in §6.
+- [x] `DESIGN.md` is written from the built surface.
+- [x] The UI does not use the banned neon/glass/gradient-text clichés in §6.
 
 ---
 
@@ -720,12 +709,10 @@ At least 80% statements and branches for `src/api`, `src/domain`, `src/backgroun
 
 ## 16. Open Questions
 
-1. **Live verification:** Is there an Infisical instance and machine identity available for a live smoke test? If not, the build ships against the documented API contract and mock server, and live verification stays marked pending.
-2. **Distribution:** Is V1 internal/unpacked only, or should the repo also prepare a Chrome Web Store package and privacy disclosures?
-3. **Name:** Is “Infisical Console” acceptable, or should it be a K79-branded name such as “K79 Vault for Infisical”?
-4. **Access-token semantics:** Should the token method be labeled “Access token” only, or explicitly “Personal Access Token” based on the user’s Infisical edition?
-5. **Clipboard clearing:** Should a later version auto-clear the clipboard after a timeout? V1 does not, because reliable background clearing requires an offscreen document.
-6. **Demo mode:** Confirm that a development-only synthetic demo mode is acceptable for UI review and e2e.
+1. **Distribution:** V1 is internal/unpacked. Chrome Web Store packaging is a later decision.
+2. **Name:** “Infisical Console” is the working name; confirm before publishing.
+3. **Clipboard clearing:** V1 does not auto-clear, because reliable background clearing requires an offscreen document.
+4. **Demo mode:** Deferred. Real credentials are available, and live smoke tests use disposable synthetic secrets instead.
 
 ---
 

@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["extensions/infisical/src/*"],
+      "@k79/shared": ["packages/shared/src/index.ts"],
+      "@k79/ui": ["packages/ui/src/index.ts"]
+    }
+  },
+  "include": ["packages/**/*.ts", "packages/**/*.tsx", "*.ts"],
+  "exclude": ["**/node_modules/**", "**/.output/**", "**/.wxt/**"]
+}
