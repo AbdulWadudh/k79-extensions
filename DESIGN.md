@@ -205,7 +205,7 @@ The environment rail uses full-height rectangular tabs, not rounded pills. Secre
 ### Inspector Value Card
 
 - **Header:** the actual secret key in monospace, not a generic “Value” label.
-- **Body:** masked or revealed value only; no helper prose inside the card.
+- **Body:** masked or revealed value only; no helper prose inside the card. It sizes to its content with a max height and internal scroll for long values.
 - **Footer:** icon-only reveal, copy, edit, and delete controls aligned to the bottom right.
 - **Inline edit:** choosing edit turns the card header key into a textbox and the value body into a textarea; Cancel/Save replace the footer actions. No separate edit page.
 - **Header bar:** navigation, shared/version badges, and close only; no global action footer.

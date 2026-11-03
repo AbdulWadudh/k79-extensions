@@ -14,3 +14,7 @@ body,
 body {
   overflow: hidden;
 }
+
+.textarea-autosize {
+  field-sizing: content;
+}

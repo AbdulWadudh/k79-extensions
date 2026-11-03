@@ -164,9 +164,10 @@ Behavior:
 
 ### 5.5 Inspector
 
-- Project, environment, path, version, last update, and comment in the metadata rows.
+- Version badge in the nav; updated time and comment below the card.
 - No duplicate key heading; the value card header owns the actual key.
 - Value field: masked until revealed; monospace, multi-line aware.
+- The value body sizes to its content up to a maximum height, then scrolls; there is no hardcoded minimum height.
 - Bottom-right card actions: reveal, copy, edit, delete.
 - A clear “Shared secret” label. Personal secrets are out of scope.
 - On 403, mutation controls are disabled with a precise explanation.

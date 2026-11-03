@@ -508,8 +508,6 @@ export function Workspace({
                   onSaved={handleSaved}
                   onForbidden={handleForbidden}
                   readOnly={readOnly}
-                  projectName={currentProject?.name}
-                  environment={status.environment ?? ""}
                 />
               ) : null}
 

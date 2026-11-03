@@ -37,8 +37,6 @@ export function SecretInspector({
   onSaved,
   onForbidden,
   readOnly,
-  projectName,
-  environment,
 }: {
   secret: SecretSummary;
   scope: SecretScope;
@@ -56,8 +54,6 @@ export function SecretInspector({
   onSaved: (result: MutationResult) => void;
   onForbidden: () => void;
   readOnly: boolean;
-  projectName?: string;
-  environment: string;
 }) {
   const update = useUpdateSecret(scope, secret.key);
   const [draftKey, setDraftKey] = useState(secret.key);
@@ -142,7 +138,7 @@ export function SecretInspector({
 
           <div
             className={cn(
-              "min-h-28 break-all px-3 py-3 font-mono text-[12px] leading-5",
+              "max-h-64 overflow-y-auto break-all px-3 py-3 font-mono text-[12px] leading-5",
               editing || revealed ? "text-ink" : "text-muted",
             )}
           >
@@ -165,9 +161,9 @@ export function SecretInspector({
                   aria-label="Value"
                   value={draftValue}
                   onChange={(event) => setDraftValue(event.target.value)}
-                  rows={5}
+                  rows={1}
                   disabled={update.isPending}
-                  className="min-h-28 resize-y border-0 bg-transparent p-0 font-mono text-[12px] leading-5 shadow-none focus-visible:ring-0"
+                  className="textarea-autosize max-h-64 min-h-6 resize-none overflow-y-auto border-0 bg-transparent p-0 font-mono text-[12px] leading-5 shadow-none focus-visible:ring-0"
                 />
               )
             ) : detailLoading ? (
@@ -249,28 +245,7 @@ export function SecretInspector({
           </div>
         ) : null}
 
-        <dl className="mt-5 grid gap-2 border-t border-line pt-4 text-[11px]">
-          <div className="flex items-start justify-between gap-4">
-            <dt className="text-muted">Project</dt>
-            <dd className="max-w-[65%] truncate text-right font-mono text-ink-soft">
-              {projectName ?? "—"}
-            </dd>
-          </div>
-          <div className="flex items-start justify-between gap-4">
-            <dt className="text-muted">Environment</dt>
-            <dd className="font-mono text-ink-soft">{environment}</dd>
-          </div>
-          <div className="flex items-start justify-between gap-4">
-            <dt className="text-muted">Path</dt>
-            <dd className="max-w-[65%] truncate text-right font-mono text-ink-soft">
-              {secret.path}
-            </dd>
-          </div>
-          <div className="flex items-start justify-between gap-4">
-            <dt className="text-muted">Updated</dt>
-            <dd className="text-right text-ink-soft">{formatUpdatedAt(secret.updatedAt)}</dd>
-          </div>
-        </dl>
+        <p className="mt-4 text-[10px] text-muted">{formatUpdatedAt(secret.updatedAt)}</p>
       </div>
     </div>
   );
