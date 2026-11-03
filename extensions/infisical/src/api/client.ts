@@ -171,6 +171,27 @@ export async function listSecrets(
   return secretListResponseSchema.parse(response).secrets.map(toSecretSummary);
 }
 
+export async function listSecretValues(
+  baseUrl: string,
+  token: string,
+  scope: SecretScope,
+): Promise<SecretDetail[]> {
+  const response = await requestJson(baseUrl, "/api/v4/secrets", {
+    token,
+    query: {
+      projectId: scope.projectId,
+      environment: scope.environment,
+      secretPath: scope.secretPath,
+      viewSecretValue: "true",
+      expandSecretReferences: "false",
+      recursive: "false",
+      includeImports: "false",
+    },
+  });
+
+  return secretListResponseSchema.parse(response).secrets.map(toSecretDetail);
+}
+
 export async function getSecret(
   baseUrl: string,
   token: string,

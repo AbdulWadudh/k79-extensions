@@ -9,7 +9,6 @@ import type {
   SecretScope,
   SecretSummary,
 } from "@/api/types";
-import { ErrorBanner } from "@/components/error-banner";
 import { Icon } from "@/components/icon";
 import { useProjects, useSetScope } from "@/features/connection/queries";
 import { useFolders } from "@/features/folders/queries";
@@ -20,6 +19,7 @@ import { SecretInspector } from "@/features/secrets/secret-inspector";
 import { SecretList } from "@/features/secrets/secret-list";
 import { SettingsPanel } from "@/features/settings/settings-panel";
 import { copyText } from "@/lib/clipboard";
+import { infisicalProjectUrl, openInfisicalDashboard } from "@/lib/infisical-dashboard";
 import { queryKeys } from "@/lib/query-keys";
 import { rpc } from "@/messaging/client";
 import type { ConnectionStatus } from "@/messaging/protocol";
@@ -57,6 +57,7 @@ export function Workspace({
   const [revealed, setRevealed] = useState(false);
   const [inlineSecrets, setInlineSecrets] = useState<Record<string, string>>({});
   const [revealingKey, setRevealingKey] = useState<string | null>(null);
+  const [revealingAll, setRevealingAll] = useState(false);
   const [view, setView] = useState<View>("list");
   const [toast, setToast] = useState<Toast | null>(null);
   const [pathError, setPathError] = useState<string | undefined>();
@@ -125,6 +126,7 @@ export function Workspace({
 
   const paneOpen = view === "detail" || view === "create" || view === "edit";
   const canWrite = !readOnly;
+  const anyRevealed = revealed || Object.keys(inlineSecrets).length > 0;
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: reset concealment when the selection changes.
   useEffect(() => {
@@ -321,6 +323,35 @@ export function Workspace({
     showToast("Concealed all revealed values");
   }
 
+  async function toggleAllReveals() {
+    if (anyRevealed) {
+      concealAll();
+      return;
+    }
+    if (!scope) return;
+
+    setRevealingAll(true);
+    try {
+      const details = await rpc<SecretDetail[]>({
+        type: "secrets.listValues",
+        payload: { scope },
+      });
+      const visibleKeys = new Set(filteredSecrets.map((secret) => secret.key));
+      const next: Record<string, string> = {};
+      for (const detail of details) {
+        if (visibleKeys.has(detail.key)) next[detail.key] = detail.value;
+      }
+      setInlineSecrets(next);
+      if (selectedKey) setRevealed(true);
+      const count = Object.keys(next).length;
+      showToast(`Revealed ${count} secret${count === 1 ? "" : "s"}`);
+    } catch (error) {
+      showToast(errorMessage(error), "danger");
+    } finally {
+      setRevealingAll(false);
+    }
+  }
+
   function handleSaved(result: MutationResult) {
     setInlineSecrets({});
     if (result.status === "saved") {
@@ -379,7 +410,12 @@ export function Workspace({
           void secretsQuery.refetch();
           void foldersQuery.refetch();
         }}
-        onConceal={concealAll}
+        onToggleRevealAll={() => void toggleAllReveals()}
+        allRevealed={anyRevealed}
+        revealingAll={revealingAll}
+        onOpenInfisical={() =>
+          void openInfisicalDashboard(infisicalProjectUrl(status.baseUrl, currentProject))
+        }
         search={search}
         onSearchChange={setSearch}
         searchRef={searchRef}
@@ -445,9 +481,10 @@ export function Workspace({
 
           {paneOpen ? (
             <aside className="flex min-h-0 flex-1 flex-col border-line bg-surface min-[700px]:w-[340px] min-[700px]:flex-none min-[700px]:border-l">
-              {view === "detail" && selectedSecret ? (
+              {(view === "detail" || view === "edit") && selectedSecret ? (
                 <SecretInspector
                   secret={selectedSecret}
+                  scope={scope}
                   detail={detailQuery.data}
                   detailLoading={detailQuery.isFetching && !detailQuery.data}
                   detailError={
@@ -458,11 +495,18 @@ export function Workspace({
                         : null
                   }
                   revealed={revealed}
+                  editing={view === "edit"}
                   onToggleReveal={() => setRevealed((value) => !value)}
                   onCopy={() => void copySecret(selectedSecret)}
                   onEdit={openEdit}
+                  onCancelEdit={() => {
+                    setRevealed(false);
+                    setView("detail");
+                  }}
                   onDelete={() => setDeleteOpen(true)}
                   onBack={closePane}
+                  onSaved={handleSaved}
+                  onForbidden={handleForbidden}
                   readOnly={readOnly}
                   projectName={currentProject?.name}
                   environment={status.environment ?? ""}
@@ -481,39 +525,6 @@ export function Workspace({
                   onForbidden={handleForbidden}
                   readOnly={readOnly}
                 />
-              ) : null}
-
-              {view === "edit" && selectedSecret ? (
-                detailQuery.error ? (
-                  <div className="p-4">
-                    <ErrorBanner
-                      title="Could not load this secret"
-                      message={
-                        detailQuery.error instanceof Error
-                          ? detailQuery.error.message
-                          : "Try again."
-                      }
-                    />
-                  </div>
-                ) : (
-                  <SecretEditor
-                    key={`edit:${selectedSecret.key}:${detailQuery.data?.version ?? "loading"}`}
-                    mode="edit"
-                    scope={scope}
-                    projectName={currentProject?.name}
-                    environment={status.environment ?? ""}
-                    secret={selectedSecret}
-                    detail={detailQuery.data}
-                    detailLoading={detailQuery.isFetching && !detailQuery.data}
-                    onClose={() => {
-                      setRevealed(false);
-                      setView("detail");
-                    }}
-                    onSaved={handleSaved}
-                    onForbidden={handleForbidden}
-                    readOnly={readOnly}
-                  />
-                )
               ) : null}
             </aside>
           ) : null}

@@ -83,8 +83,10 @@ All Infisical tests live under `extensions/infisical/tests/`:
 ## Use it
 
 - Folders render as rows above secrets. Click a folder to enter it; use the up control in the path bar to return.
-- Click a row to copy the value. The eye action reveals inline; the details icon opens the inspector.
-- Edit and Delete are icon-only controls in the inspector header.
+- Click a row to copy the value. The row actions are reveal, copy, and details.
+- The header reveal control is a toggle: reveal all visible values, then conceal all.
+- The globe control in the path row opens the exact project overview in the Infisical dashboard: organization, project, and environment context from the connection.
+- In the inspector, the value card header shows the key; reveal, copy, edit, and delete are in the card’s bottom-right footer. Edit switches the key and value to inline textboxes.
 - The popup runs the full console. The panel icon in its path row opens the same session in the side panel.
 
 ## Live testing
@@ -133,7 +135,7 @@ k79-extensions/
 - UI surfaces call a typed, Zod-validated message union. There is no arbitrary fetch message.
 - Access tokens live in `chrome.storage.session`; preferences live in `chrome.storage.local`.
 - Credentials are stored in `chrome.storage.local` only when “Remember on this device” is on.
-- Secret values live in memory only. Lists use `viewSecretValue=false`; values are fetched one at a time for reveal, copy, or edit.
+- Secret values live in memory only. Lists use `viewSecretValue=false`; single values are fetched for reveal, copy, or edit, and the explicit reveal-all toggle uses one batch request.
 - Self-hosted origins request an optional host permission for the exact origin.
 
 ## Security

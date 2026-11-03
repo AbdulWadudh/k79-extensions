@@ -55,7 +55,7 @@ Success is not “a CRUD form that works.” Success is a tool that a developer 
 - Search locally by key, path, and comment.
 - Reveal and copy a secret value on demand.
 - Create a shared secret.
-- Edit value, comment, and key (rename).
+- Create with a comment; edit value and key inline in the inspector.
 - Delete a shared secret with explicit confirmation.
 - Toolbar popup: connection state, current scope, recent secret names, quick copy, open side panel.
 - Onboarding, settings, empty/loading/error states.
@@ -110,8 +110,8 @@ Side panel
 │  ├─ Path bar            / / / / current folder, recent paths, up one level
 │  ├─ Search              local filter, keyboard shortcut
 │  ├─ Secret list         rows, folder grouping, counts, loading/empty/error states
-│  ├─ Inspector          detail + reveal/copy/edit/delete (wide layout)
-│  └─ Editor             create/edit (pane on wide, pushed page on narrow)
+│  ├─ Inspector          detail + inline edit + reveal/copy/delete (wide layout)
+│  └─ Editor             create only (pane on wide, pushed page on narrow)
 ├─ Settings
 │  ├─ Connection
 │  ├─ Appearance
@@ -131,11 +131,12 @@ Side panel
 The signature structure is **index and leaf**:
 
 - **Wide (≥ 640 px):** a narrow vertical environment/index rail on the left, the secret list in the middle, and a 280–320 px inspector on the right. The rail gives one-click environment switching without a modal.
+- **Dashboard access:** the path row has a globe control that opens the exact project overview in Infisical: `/organizations/{orgId}/projects/secret-management/{projectId}/overview` on the appropriate cloud or self-hosted origin.
 - **Medium (480–639 px):** top scope band and list; selecting a row pushes a full-height inspector page with a back control.
 - **Narrow (320–479 px):** same as medium, with the environment selector collapsed into a labeled chip and the path bar reduced to a breadcrumb that can be scrolled horizontally.
 - **No horizontal page scroll at any supported width.**
 
-The editor is **not a centered modal**. On wide layouts it replaces the inspector; on narrow layouts it is a pushed page. Only short, destructive confirmations use a dialog.
+Creation uses the editor page, not a centered modal. Editing is inline in the value card: key and value become textboxes, with Cancel/Save in the card footer. Only short, destructive confirmations use a dialog.
 
 ### 5.4 Secret list
 
@@ -155,28 +156,36 @@ Behavior:
 - Reveal fetches the single secret with `viewSecretValue=true`; the value stays in memory for the current panel session.
 - Row reveal is inline: the eye action shows the value in the row without opening the inspector.
 - Row click copies the value. A dedicated details icon opens the inspector.
-- The inspector has its own reveal control; Edit and Delete are icon-only controls in the inspector header.
+- The header reveal control is a toggle: if any value is revealed it conceals all; otherwise it fetches and reveals all visible values in the current folder.
+- The inspector value card header shows the actual secret key. Reveal, copy, edit, and delete are icon-only controls in the card’s bottom-right footer.
 - Copy fetches the value if needed, writes to the clipboard, and shows a short confirmation with the key name.
 - “Conceal all” clears inline and inspector values.
 - Search is local and never queries values.
 
 ### 5.5 Inspector
 
-- Large key, path, project, environment, version, last update, and comment.
-- Value field: masked until revealed; reveal and copy buttons; monospace, multi-line aware.
-- Edit and Delete actions.
+- Project, environment, path, version, last update, and comment in the metadata rows.
+- No duplicate key heading; the value card header owns the actual key.
+- Value field: masked until revealed; monospace, multi-line aware.
+- Bottom-right card actions: reveal, copy, edit, delete.
 - A clear “Shared secret” label. Personal secrets are out of scope.
 - On 403, mutation controls are disabled with a precise explanation.
 
-### 5.6 Editor
+### 5.6 Create Editor and Inline Edit
 
-Fields:
+Create editor fields:
 
-- Key (required; no `/`; trimmed).
-- Value (required for create; can be empty on edit only if the user explicitly clears it).
+- Key (required; no `/`; trimmed; normalized to UPPERCASE).
+- Value (required).
 - Comment (optional).
 - Folder path (defaults to the current path; normalized to start with `/`, no trailing slash except root).
-- Rename guidance when the key changes.
+
+Inline edit is confined to the value card:
+
+- The card header key becomes a monospace textbox.
+- The value body becomes a monospace textarea.
+- Cancel and Save replace the reveal/copy/edit/delete footer actions.
+- No separate edit page or duplicate header is introduced.
 
 States: default, dirty, validating, saving, saved, error. A failed save preserves the draft and shows the server message without echoing the value.
 
@@ -588,7 +597,7 @@ Conventions:
 ### Component (Vitest + Testing Library)
 
 - Secret row: keyboard selection, reveal, copy, no value in the accessible name until revealed.
-- Editor: validation, dirty state, failed save preserves draft, rename warning.
+- Inline edit: key/value editing, dirty state, failed save preserves draft, no layout switch.
 - Delete dialog: names scope/key, cancel is default focus, destructive action requires a deliberate click.
 - Onboarding: Universal Auth validation, manual scope fallback, inline errors.
 

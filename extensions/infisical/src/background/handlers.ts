@@ -5,6 +5,7 @@ import {
   listFolders,
   listProjects,
   listSecrets,
+  listSecretValues,
   updateSecret,
 } from "../api/client";
 import { normalizeThrownError } from "../api/errors";
@@ -67,6 +68,13 @@ async function dispatch(request: RpcRequest): Promise<unknown> {
     case "secrets.list": {
       const prefs = await getPrefs();
       return withAuthRetry((token) => listSecrets(prefs.baseUrl, token, request.payload.scope));
+    }
+
+    case "secrets.listValues": {
+      const prefs = await getPrefs();
+      return withAuthRetry((token) =>
+        listSecretValues(prefs.baseUrl, token, request.payload.scope),
+      );
     }
 
     case "secrets.get": {

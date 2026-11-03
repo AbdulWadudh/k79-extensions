@@ -40,6 +40,7 @@ export const projectSchema = z.object({
   id: z.string(),
   name: z.string(),
   slug: z.string(),
+  orgId: z.string().optional(),
   environments: z.array(environmentSchema).default([]),
 });
 

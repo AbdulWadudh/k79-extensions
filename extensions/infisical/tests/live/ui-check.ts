@@ -116,6 +116,7 @@ try {
 
   await page.getByRole("button", { name: /Open workspace/ }).click();
   await page.getByLabel("Filter secrets").waitFor({ timeout: 30_000 });
+  await page.getByRole("button", { name: "Open Infisical" }).waitFor();
   await waitForSettled(page);
   await page.screenshot({ path: join(reviewDir, "workspace-400.png"), fullPage: true });
   await assertNoBlockingA11y(page, "workspace");
@@ -151,6 +152,13 @@ try {
 
     await page.getByRole("button", { name: "Close inspector" }).click();
     const syntheticRow = page.locator("li").filter({ hasText: smokeKey }).first();
+    const searchInput = page.getByLabel("Filter secrets");
+    await searchInput.fill(smokeKey);
+    await page.getByRole("button", { name: "Reveal all secret values" }).click();
+    await syntheticRow.getByText(smokeValue).waitFor({ timeout: 30_000 });
+    await page.getByRole("button", { name: "Conceal all secret values" }).click();
+    assert.equal(await syntheticRow.getByText(smokeValue).isVisible(), false);
+    await searchInput.fill("");
     await syntheticRow.getByRole("button", { name: "Reveal secret value" }).click();
     await syntheticRow.getByText(smokeValue).waitFor({ timeout: 30_000 });
     assert.equal(await page.getByText("Inspector").isVisible(), false);
@@ -159,7 +167,7 @@ try {
     assert.equal(await syntheticRow.getByText(smokeValue).isVisible(), false);
     await syntheticRow.getByRole("button", { name: "Reveal secret value" }).click();
     await syntheticRow.getByText(smokeValue).waitFor({ timeout: 30_000 });
-    await page.getByRole("button", { name: "Conceal all revealed values" }).click();
+    await page.getByRole("button", { name: "Conceal all secret values" }).click();
     assert.equal(await syntheticRow.getByText(smokeValue).isVisible(), false);
 
     await syntheticRow.getByRole("button").first().click();
@@ -176,10 +184,11 @@ try {
 
     const renamedKey = `${smokeKey}_RENAMED`;
     await page.getByRole("button", { name: "Edit", exact: true }).click();
+    const inlineValue = page.getByRole("textbox", { name: "Value", exact: true });
+    assert.equal(await inlineValue.inputValue(), smokeValue);
+    await waitForSettled(page);
+    await page.screenshot({ path: join(reviewDir, "secret-inline-edit-400.png"), fullPage: true });
     await page.getByRole("textbox", { name: "Key", exact: true }).fill(renamedKey);
-    await page
-      .getByRole("textbox", { name: "Comment", exact: true })
-      .fill("Synthetic UI smoke test, edited and renamed. Safe to delete.");
     await page.getByRole("button", { name: "Save changes" }).click();
     await page.getByText(`Saved ${renamedKey}`).waitFor({ timeout: 30_000 });
     currentKey = renamedKey;

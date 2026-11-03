@@ -38,6 +38,10 @@ export const rpcRequestSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("folders.list"), payload: z.object({ scope: secretScopeSchema }) }),
   z.object({ type: z.literal("secrets.list"), payload: z.object({ scope: secretScopeSchema }) }),
   z.object({
+    type: z.literal("secrets.listValues"),
+    payload: z.object({ scope: secretScopeSchema }),
+  }),
+  z.object({
     type: z.literal("secrets.get"),
     payload: z.object({ scope: secretScopeSchema, name: secretNameSchema }),
   }),

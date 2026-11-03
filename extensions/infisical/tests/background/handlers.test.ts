@@ -23,6 +23,7 @@ vi.mock("@/api/client", () => ({
   getSecret: vi.fn(),
   listFolders: vi.fn(),
   listProjects: vi.fn(),
+  listSecretValues: vi.fn(),
   listSecrets: vi.fn(),
   updateSecret: vi.fn(),
 }));
@@ -33,6 +34,7 @@ import {
   listFolders,
   listProjects,
   listSecrets,
+  listSecretValues,
   updateSecret,
 } from "@/api/client";
 import {
@@ -109,6 +111,28 @@ describe("background RPC dispatcher", () => {
       data: [{ id: "folder-1", name: "LMS-BACKEND", path: "/LMS-BACKEND" }],
     });
     expect(listFolders).toHaveBeenCalledWith("https://us.infisical.com", "token", scope);
+  });
+
+  it("lists values for an explicit reveal-all request", async () => {
+    vi.mocked(listSecretValues).mockResolvedValue([
+      {
+        id: "secret-1",
+        key: "KEY",
+        path: "/",
+        comment: "",
+        version: 1,
+        value: "synthetic-value",
+        tags: [],
+      },
+    ]);
+
+    const result = await handleMessage({
+      type: "secrets.listValues",
+      payload: { scope },
+    } satisfies RpcRequest);
+
+    expect(result.ok).toBe(true);
+    expect(listSecretValues).toHaveBeenCalledWith("https://us.infisical.com", "token", scope);
   });
 
   it("lists secrets without exposing values", async () => {

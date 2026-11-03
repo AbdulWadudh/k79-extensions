@@ -38,9 +38,11 @@ try {
     headers,
   });
   const project = projects.projects[0] as
-    | { id: string; environments?: Array<{ slug: string }> }
+    | { id: string; orgId?: string; environments?: Array<{ slug: string }> }
     | undefined;
   assert.ok(project, "no Secret Manager project is available");
+  assert.ok(project.orgId, "the project response is missing orgId");
+  console.log("project_org_id=present");
   projectId = project.id;
   environment = project.environments?.[0]?.slug ?? "";
   assert.ok(environment, "the project has no environment");

@@ -6,6 +6,7 @@ import {
   listFolders,
   listProjects,
   listSecrets,
+  listSecretValues,
   loginUniversalAuth,
   normalizeBaseUrl,
   updateSecret,
@@ -132,6 +133,44 @@ describe("Infisical client", () => {
     expect(url.searchParams.get("viewSecretValue")).toBe("false");
     expect(url.searchParams.get("expandSecretReferences")).toBe("false");
     expect(url.searchParams.get("recursive")).toBe("false");
+  });
+
+  it("lists all values only for an explicit reveal-all request", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse({
+        secrets: [
+          {
+            id: "secret-1",
+            secretKey: "KEY",
+            secretValue: "synthetic-value",
+            secretComment: "",
+            version: 1,
+            secretPath: "/",
+          },
+        ],
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const values = await listSecretValues("https://us.infisical.com", "token", {
+      projectId: "project-1",
+      environment: "dev",
+      secretPath: "/",
+    });
+
+    expect(values).toEqual([
+      {
+        id: "secret-1",
+        key: "KEY",
+        path: "/",
+        comment: "",
+        version: 1,
+        value: "synthetic-value",
+        tags: [],
+      },
+    ]);
+    const [url] = fetchMock.mock.calls[0] as [URL];
+    expect(url.searchParams.get("viewSecretValue")).toBe("true");
   });
 
   it("maps a 401 response to an unauthorized error", async () => {

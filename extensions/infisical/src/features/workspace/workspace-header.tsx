@@ -1,13 +1,15 @@
 import {
   ArrowUp01Icon,
   ChevronDownIcon,
-  EyeOffIcon,
+  EyeIcon,
   Folder01Icon,
+  GlobeIcon,
   PlusSignIcon,
   Refresh01Icon,
   Search01Icon,
   Settings02Icon,
   SidebarRight01Icon,
+  ViewOffSlashIcon,
 } from "@hugeicons/core-free-icons";
 import {
   Badge,
@@ -20,6 +22,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Spinner,
 } from "@k79/ui";
 import { type FormEvent, type RefObject, useEffect, useRef, useState } from "react";
 import type { Environment, Project } from "@/api/types";
@@ -182,7 +185,10 @@ export function WorkspaceHeader({
   onNew,
   onSettings,
   onRefresh,
-  onConceal,
+  onToggleRevealAll,
+  allRevealed,
+  revealingAll,
+  onOpenInfisical,
   search,
   onSearchChange,
   searchRef,
@@ -204,7 +210,10 @@ export function WorkspaceHeader({
   onNew: () => void;
   onSettings: () => void;
   onRefresh: () => void;
-  onConceal: () => void;
+  onToggleRevealAll: () => void;
+  allRevealed: boolean;
+  revealingAll: boolean;
+  onOpenInfisical: () => void;
   search: string;
   onSearchChange: (value: string) => void;
   searchRef: RefObject<HTMLInputElement | null>;
@@ -268,8 +277,17 @@ export function WorkspaceHeader({
           <IconButton label="Refresh secrets" onClick={onRefresh} disabled={refreshing}>
             <Icon icon={Refresh01Icon} size={14} className={cn(refreshing && "animate-spin")} />
           </IconButton>
-          <IconButton label="Conceal all revealed values" onClick={onConceal}>
-            <Icon icon={EyeOffIcon} size={14} />
+          <IconButton
+            label={allRevealed ? "Conceal all secret values" : "Reveal all secret values"}
+            onClick={onToggleRevealAll}
+            aria-pressed={allRevealed}
+            disabled={revealingAll}
+          >
+            {revealingAll ? (
+              <Spinner className="size-3.5" label="Revealing all values" />
+            ) : (
+              <Icon icon={allRevealed ? ViewOffSlashIcon : EyeIcon} size={14} />
+            )}
           </IconButton>
           <IconButton label="Settings" onClick={onSettings}>
             <Icon icon={Settings02Icon} size={14} />
@@ -302,6 +320,9 @@ export function WorkspaceHeader({
           onPathChange={onPathChange}
           error={pathError}
         />
+        <IconButton label="Open Infisical" onClick={onOpenInfisical} className="size-6">
+          <Icon icon={GlobeIcon} size={14} />
+        </IconButton>
         {onOpenSidePanel ? (
           <IconButton label="Open side panel" onClick={onOpenSidePanel} className="size-6">
             <Icon icon={SidebarRight01Icon} size={14} />

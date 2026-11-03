@@ -165,6 +165,7 @@ The signature structure is **index and leaf**.
 - **Wide (640px+):** a 56px dark environment rail joins the left edge. At 700px+ the list and a 340px inspector/editor share the body. The rail is quick environment switching, not a second navigation system.
 - **Density:** 44–48px secret rows, 36px controls, 1px separators, 12–16px panel padding. No horizontal page scroll at supported widths.
 - **Page frame:** the side panel or popup is the viewport. Do not add a centered page shell, hero, or card grid around the workspace.
+- **Dashboard access:** the path row has a globe control that opens the exact Infisical project overview, not the dashboard home.
 
 ## Elevation & Depth
 
@@ -200,6 +201,14 @@ The environment rail uses full-height rectangular tabs, not rounded pills. Secre
 - **Style:** 36px height, 5px radius, raised paper ground, one-pixel hairline. Monospace only for keys, values, paths, and instance URLs.
 - **Focus:** bottle-green border plus a soft 2px ring. Error: vermilion border and a text error directly below the control.
 - **Labels:** 11px uppercase tracking, with helper text in muted sage. Do not use placeholder text as the label.
+
+### Inspector Value Card
+
+- **Header:** the actual secret key in monospace, not a generic “Value” label.
+- **Body:** masked or revealed value only; no helper prose inside the card.
+- **Footer:** icon-only reveal, copy, edit, and delete controls aligned to the bottom right.
+- **Inline edit:** choosing edit turns the card header key into a textbox and the value body into a textarea; Cancel/Save replace the footer actions. No separate edit page.
+- **Header bar:** navigation, shared/version badges, and close only; no global action footer.
 
 ### Folder Rows
 
