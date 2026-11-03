@@ -24,7 +24,7 @@ A fast, keyboard-first companion to Infisical that keeps the dangerous parts del
 
 ## Operating Context
 
-- Used in a narrow Chrome side panel, frequently beside an IDE or terminal.
+- Used in Chrome’s side panel or a 380 px toolbar popup, frequently beside an IDE or terminal.
 - Used on trusted workstations, often for long sessions, sometimes at night.
 - Users may work with Infisical Cloud (US or EU region) or a self-hosted instance.
 - Projects are scoped by RBAC. A machine identity may legitimately be unable to list all projects.
@@ -40,7 +40,7 @@ Confirmed for the first usable slice:
 - Project and environment selection, with a manual project-ID/environment-slug fallback when listing is forbidden.
 - Shared-secret CRUD: list, search, reveal, copy, create, edit, delete.
 - Folder path navigation by path, with recent paths.
-- Side panel as the full workspace; toolbar popup as a quick status and copy surface.
+- Side panel and toolbar popup both run the full workspace. The popup is the default fast surface; the side panel is optional for a larger persistent view.
 - Explicit confirmation before deletion.
 - No secret values in persistent storage, logs, telemetry, or error text.
 - English-only UI for V1.

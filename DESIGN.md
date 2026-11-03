@@ -160,11 +160,11 @@ The palette is restrained and warm: a paper-neutral ground, a dark green working
 
 The signature structure is **index and leaf**.
 
-- **Narrow (320–479px):** one column. Brand, project, and actions occupy a 52px top bar; environment, path, and count sit in a second row; search in a third. Selecting a secret pushes a full-height inspector; editing pushes a full-height editor.
+- **Narrow (320–479px) and popup:** one column. Brand, project, and actions occupy a 52px top bar; environment, path, and count sit in a second row; search in a third. Selecting a secret pushes a full-height inspector; editing pushes a full-height editor. The 380×520 toolbar popup is the default compact console; the optional side-panel control lives in the path row.
 - **Medium (480–639px):** the environment picker returns to the top bar. The list remains single-column; inspector and editor still push.
 - **Wide (640px+):** a 56px dark environment rail joins the left edge. At 700px+ the list and a 340px inspector/editor share the body. The rail is quick environment switching, not a second navigation system.
 - **Density:** 44–48px secret rows, 36px controls, 1px separators, 12–16px panel padding. No horizontal page scroll at supported widths.
-- **Page frame:** the side panel is the viewport. Do not add a centered page shell, hero, or card grid around the workspace.
+- **Page frame:** the side panel or popup is the viewport. Do not add a centered page shell, hero, or card grid around the workspace.
 
 ## Elevation & Depth
 
@@ -205,7 +205,7 @@ The environment rail uses full-height rectangular tabs, not rounded pills. Secre
 
 - **Structure:** key + version badge on the first line; fixed-width mask, path, and relative age on the second.
 - **Selected:** sage-soft fill with a one-pixel bottle-green left rule. Do not use a thick accent bar or glow.
-- **Actions:** copy and reveal appear on hover/focus at 480px+, always visible below 480px. Values are never shown in the row.
+- **Actions:** copy and reveal appear on hover/focus at 480px+, always visible below 480px. Reveal is inline and toggles the value in the row; row click opens the inspector.
 - **Empty:** teach the next action; no lock-and-key illustration.
 
 ### Environment Rail
@@ -224,7 +224,8 @@ The environment rail uses full-height rectangular tabs, not rounded pills. Secre
 ### Do:
 
 - **Do** show project, environment, and path before any read, write, or delete.
-- **Do** keep values masked at a fixed width so length is not leaked.
+- **Do** keep values masked at a fixed width so length is not leaked until an inline reveal.
+- **Do** keep row reveal inline and row click for the inspector.
 - **Do** use hairlines and tonal steps for structure.
 - **Do** keep the primary accent to actions, selection, and scope state.
 - **Do** use Hugeicons at one stroke weight and label every icon-only control.

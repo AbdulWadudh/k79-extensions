@@ -22,7 +22,9 @@ function renderList(overrides: Partial<ComponentProps<typeof SecretList>> = {}) 
       selectedKey={null}
       onSelect={vi.fn()}
       onCopy={vi.fn()}
-      onReveal={vi.fn()}
+      onToggleReveal={vi.fn()}
+      revealedValues={{}}
+      revealingKey={null}
       copiedKey={null}
       loading={false}
       error={null}
@@ -61,5 +63,29 @@ describe("SecretList", () => {
     renderList({ secrets: [], canWrite: true });
     expect(screen.getByText("No secrets in this folder")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "New secret" })).toBeInTheDocument();
+  });
+
+  it("toggles an inline reveal without selecting the row", async () => {
+    const user = userEvent.setup();
+    const onSelect = vi.fn();
+    const onToggleReveal = vi.fn();
+    renderList({ onSelect, onToggleReveal });
+
+    await user.click(screen.getByRole("button", { name: "Reveal secret value" }));
+    expect(onToggleReveal).toHaveBeenCalledWith(secret);
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it("renders an inline revealed value and its conceal action", async () => {
+    const user = userEvent.setup();
+    const onToggleReveal = vi.fn();
+    renderList({
+      onToggleReveal,
+      revealedValues: { [secret.key]: "synthetic-value" },
+    });
+
+    expect(screen.getByText("synthetic-value")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Conceal secret value" }));
+    expect(onToggleReveal).toHaveBeenCalledWith(secret);
   });
 });

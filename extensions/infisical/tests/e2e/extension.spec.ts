@@ -58,9 +58,11 @@ test("loads the disconnected popup", async () => {
 
   try {
     const page = await context.newPage();
+    await page.setViewportSize({ width: 380, height: 520 });
     await page.goto(`chrome-extension://${extensionId}/popup.html`);
-    await expect(page.getByText("A faster view of your secrets")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Open side panel" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Connect your instance" })).toBeVisible();
+    const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+    expect(scrollWidth).toBeLessThanOrEqual(380);
   } finally {
     await context.close();
     await rm(profilePath, { recursive: true, force: true });

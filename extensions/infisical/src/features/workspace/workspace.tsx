@@ -2,7 +2,7 @@ import { AlertCircleIcon, CheckIcon } from "@hugeicons/core-free-icons";
 import { cn } from "@k79/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { MutationResult, SecretScope, SecretSummary } from "@/api/types";
+import type { MutationResult, SecretDetail, SecretScope, SecretSummary } from "@/api/types";
 import { ErrorBanner } from "@/components/error-banner";
 import { Icon } from "@/components/icon";
 import { useProjects, useSetScope } from "@/features/connection/queries";
@@ -36,12 +36,20 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Something went wrong.";
 }
 
-export function Workspace({ status }: { status: ConnectionStatus }) {
+export function Workspace({
+  status,
+  onOpenSidePanel,
+}: {
+  status: ConnectionStatus;
+  onOpenSidePanel?: () => void;
+}) {
   const queryClient = useQueryClient();
   const searchRef = useRef<HTMLInputElement>(null);
   const [search, setSearch] = useState("");
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
+  const [inlineSecrets, setInlineSecrets] = useState<Record<string, string>>({});
+  const [revealingKey, setRevealingKey] = useState<string | null>(null);
   const [view, setView] = useState<View>("list");
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [toast, setToast] = useState<Toast | null>(null);
@@ -101,9 +109,11 @@ export function Workspace({ status }: { status: ConnectionStatus }) {
     setRevealed(false);
   }, [selectedKey]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: reset read-only detection when the scope changes.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reset read-only and inline reveals when the scope changes.
   useEffect(() => {
     setReadOnly(false);
+    setInlineSecrets({});
+    setRevealingKey(null);
   }, [status.projectId, status.environment, status.secretPath]);
 
   useEffect(() => {
@@ -187,6 +197,7 @@ export function Workspace({ status }: { status: ConnectionStatus }) {
       await setScope.mutateAsync(next);
       setSelectedKey(null);
       setRevealed(false);
+      setInlineSecrets({});
       setView("list");
     } catch (error) {
       setPathError(errorMessage(error));
@@ -237,26 +248,46 @@ export function Workspace({ status }: { status: ConnectionStatus }) {
     setRevealed(false);
   }
 
-  function revealSecret(secret: SecretSummary) {
-    setSelectedKey(secret.key);
-    setView("detail");
-    setRevealed(true);
+  async function fetchSecretValue(secret: SecretSummary): Promise<SecretDetail> {
+    if (!scope) throw new Error("Choose a scope first.");
+    return queryClient.fetchQuery({
+      queryKey: queryKeys.secret(scope, secret.key),
+      queryFn: () =>
+        rpc<SecretDetail>({
+          type: "secrets.get",
+          payload: { scope, name: secret.key },
+        }),
+      staleTime: Number.POSITIVE_INFINITY,
+      gcTime: 0,
+    });
+  }
+
+  async function toggleInlineReveal(secret: SecretSummary) {
+    if (inlineSecrets[secret.key] !== undefined) {
+      setInlineSecrets((current) => {
+        const next = { ...current };
+        delete next[secret.key];
+        return next;
+      });
+      return;
+    }
+
+    setRevealingKey(secret.key);
+    try {
+      const detail = await fetchSecretValue(secret);
+      setInlineSecrets((current) => ({ ...current, [secret.key]: detail.value }));
+    } catch (error) {
+      showToast(errorMessage(error), "danger");
+    } finally {
+      setRevealingKey(null);
+    }
   }
 
   async function copySecret(secret: SecretSummary) {
     if (!scope) return;
     try {
-      const detail = await queryClient.fetchQuery({
-        queryKey: queryKeys.secret(scope, secret.key),
-        queryFn: () =>
-          rpc<import("@/api/types").SecretDetail>({
-            type: "secrets.get",
-            payload: { scope, name: secret.key },
-          }),
-        staleTime: Number.POSITIVE_INFINITY,
-        gcTime: 0,
-      });
-      await copyText(detail.value);
+      const value = inlineSecrets[secret.key] ?? (await fetchSecretValue(secret)).value;
+      await copyText(value);
       setCopiedKey(secret.key);
       showToast(`Copied ${secret.key}`);
     } catch (error) {
@@ -266,11 +297,13 @@ export function Workspace({ status }: { status: ConnectionStatus }) {
 
   function concealAll() {
     setRevealed(false);
+    setInlineSecrets({});
     queryClient.removeQueries({ queryKey: ["secret"] });
     showToast("Concealed all revealed values");
   }
 
   function handleSaved(result: MutationResult) {
+    setInlineSecrets({});
     if (result.status === "saved") {
       setSelectedKey(result.secret.key);
       setRevealed(false);
@@ -286,6 +319,7 @@ export function Workspace({ status }: { status: ConnectionStatus }) {
     setDeleteOpen(false);
     setSelectedKey(null);
     setRevealed(false);
+    setInlineSecrets({});
     setView("list");
     showToast(result.status === "saved" ? `Deleted ${key}` : result.message);
   }
@@ -332,6 +366,7 @@ export function Workspace({ status }: { status: ConnectionStatus }) {
         refreshing={secretsQuery.isFetching && !secretsQuery.isLoading}
         pathError={pathError}
         canWrite={canWrite}
+        onOpenSidePanel={onOpenSidePanel}
       />
 
       {readOnly ? (
@@ -363,7 +398,9 @@ export function Workspace({ status }: { status: ConnectionStatus }) {
               selectedKey={selectedKey}
               onSelect={selectSecret}
               onCopy={(secret) => void copySecret(secret)}
-              onReveal={revealSecret}
+              onToggleReveal={(secret) => void toggleInlineReveal(secret)}
+              revealedValues={inlineSecrets}
+              revealingKey={revealingKey}
               copiedKey={copiedKey}
               loading={secretsQuery.isLoading}
               error={secretsError}

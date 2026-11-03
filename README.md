@@ -46,7 +46,7 @@ Load the unpacked extension:
 2. Enable **Developer mode**.
 3. Choose **Load unpacked**.
 4. Select `extensions/infisical/.output/chrome-mv3`.
-5. Pin **Infisical Console** and open it. Use the toolbar popup or Chrome’s side panel.
+5. Pin **Infisical Console** and click it. The toolbar popup is a full compact console; use the panel icon in its path row when you want the same workspace in Chrome’s side panel.
 
 Development with hot reload:
 

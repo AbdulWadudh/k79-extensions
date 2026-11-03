@@ -92,7 +92,7 @@ The extension is not a secret browser for unauthorized users. It uses the permis
 
 **Side panel — full workspace.** Chrome 116+ side panel, 320–800 px wide. This is the primary surface for browsing and editing.
 
-**Toolbar popup — quick slip.** 380 px wide, 480–560 px tall. Shows connection state, current scope, up to five recent secret names, a search field, copy actions, and an “Open full panel” button. It must not host the edit form.
+**Toolbar popup — compact console.** 380 px wide, 520 px tall. Runs the same onboarding, workspace, list, inline reveal, inspector, editor, and settings surfaces as the side panel. It is a complete working surface, not a teaser. An optional “Open side panel” control in the workspace header moves the same session into the side panel.
 
 **Onboarding — inside the side panel.** No separate options page for the first run. Three steps:
 
@@ -117,10 +117,13 @@ Side panel
 │  ├─ Appearance
 │  └─ About
 └─ Popup
-   ├─ Status + scope
-   ├─ Recent secrets
-   ├─ Quick search
-   └─ Open full panel
+   ├─ Onboarding (first run)
+   ├─ Workspace
+   │  ├─ Scope + path + search
+   │  ├─ Secret list with inline reveal
+   │  ├─ Inspector / editor
+   │  └─ Settings
+   └─ Open side panel (optional)
 ```
 
 ### 5.3 Layout
@@ -149,8 +152,10 @@ Behavior:
 
 - Values are not fetched during list load. The list request uses `viewSecretValue=false`.
 - Reveal fetches the single secret with `viewSecretValue=true`; the value stays in memory for the current panel session.
+- Row reveal is inline: the eye action shows the value in the row without opening the inspector. Row click opens the inspector.
+- The inspector has its own reveal control; Edit and Delete sit inline beneath the key, not in a global footer bar.
 - Copy fetches the value if needed, writes to the clipboard, and shows a short confirmation with the key name.
-- “Conceal all” clears all revealed values and closes the inspector value.
+- “Conceal all” clears inline and inspector values.
 - Search is local and never queries values.
 
 ### 5.5 Inspector
@@ -668,7 +673,7 @@ At least 80% statements and branches for `src/api`, `src/domain`, `src/backgroun
 ### UX and accessibility
 
 - [x] Side panel works at 360 px and 800 px without horizontal page scroll.
-- [x] Popup works at 380 px.
+- [x] Popup works at 380 px as a complete console and offers an optional side-panel control.
 - [ ] All primary flows are keyboard-completable.
 - [x] Focus is visible and never clipped; icon-only controls have accessible names.
 - [x] Reduced motion is respected.

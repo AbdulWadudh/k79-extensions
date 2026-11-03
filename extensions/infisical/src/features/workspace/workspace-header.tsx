@@ -7,6 +7,7 @@ import {
   Refresh01Icon,
   Search01Icon,
   Settings02Icon,
+  SidebarRight01Icon,
 } from "@hugeicons/core-free-icons";
 import {
   Badge,
@@ -190,6 +191,7 @@ export function WorkspaceHeader({
   refreshing,
   pathError,
   canWrite,
+  onOpenSidePanel,
 }: {
   status: ConnectionStatus;
   projects: Project[];
@@ -210,6 +212,7 @@ export function WorkspaceHeader({
   refreshing: boolean;
   pathError?: string;
   canWrite: boolean;
+  onOpenSidePanel?: () => void;
 }) {
   return (
     <header className="shrink-0 border-b border-line bg-surface">
@@ -297,6 +300,11 @@ export function WorkspaceHeader({
           onPathChange={onPathChange}
           error={pathError}
         />
+        {onOpenSidePanel ? (
+          <IconButton label="Open side panel" onClick={onOpenSidePanel} className="size-6">
+            <Icon icon={SidebarRight01Icon} size={14} />
+          </IconButton>
+        ) : null}
         <span className="shrink-0 font-mono text-[10px] tabular-nums text-muted">
           {secretCount} {secretCount === 1 ? "key" : "keys"}
         </span>

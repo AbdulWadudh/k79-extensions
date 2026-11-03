@@ -73,6 +73,29 @@ export function SecretInspector({
         </h2>
         <p className="mt-1 font-mono text-[10px] text-muted">{secret.path}</p>
 
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <Button type="button" variant="secondary" size="sm" onClick={onEdit} disabled={readOnly}>
+            <Icon icon={Edit02Icon} size={14} />
+            Edit
+          </Button>
+          <Button
+            type="button"
+            variant="quiet"
+            size="sm"
+            className="text-danger hover:bg-danger-soft hover:text-danger"
+            onClick={onDelete}
+            disabled={readOnly}
+          >
+            <Icon icon={Delete02Icon} size={14} />
+            Delete
+          </Button>
+          {readOnly ? (
+            <span className="text-[10px] leading-4 text-warning">
+              This identity can read this scope but cannot change it.
+            </span>
+          ) : null}
+        </div>
+
         <div className="mt-5 rounded-sm border border-line bg-surface-raised">
           <div className="flex items-center justify-between gap-2 border-b border-line px-3 py-2">
             <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted">
@@ -158,38 +181,6 @@ export function SecretInspector({
             <dd className="text-right text-ink-soft">{formatUpdatedAt(secret.updatedAt)}</dd>
           </div>
         </dl>
-      </div>
-
-      <div className="shrink-0 border-t border-line bg-surface p-3">
-        {readOnly ? (
-          <p className="mb-2 text-[11px] leading-4 text-warning">
-            This identity can read this scope but cannot change it.
-          </p>
-        ) : null}
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="primary"
-            size="sm"
-            className="flex-1 justify-center"
-            onClick={onEdit}
-            disabled={readOnly}
-          >
-            <Icon icon={Edit02Icon} size={14} />
-            Edit
-          </Button>
-          <Button
-            type="button"
-            variant="danger"
-            size="sm"
-            className="flex-1 justify-center"
-            onClick={onDelete}
-            disabled={readOnly}
-          >
-            <Icon icon={Delete02Icon} size={14} />
-            Delete
-          </Button>
-        </div>
       </div>
     </div>
   );

@@ -4,8 +4,9 @@ import {
   EyeIcon,
   Key01Icon,
   Search01Icon,
+  ViewOffSlashIcon,
 } from "@hugeicons/core-free-icons";
-import { Badge, Button, cn, EmptyState, IconButton, Skeleton } from "@k79/ui";
+import { Badge, Button, cn, EmptyState, IconButton, Skeleton, Spinner } from "@k79/ui";
 import { type KeyboardEvent, useRef } from "react";
 import type { SecretSummary } from "@/api/types";
 import { ErrorBanner } from "@/components/error-banner";
@@ -19,7 +20,9 @@ export function SecretList({
   selectedKey,
   onSelect,
   onCopy,
-  onReveal,
+  onToggleReveal,
+  revealedValues,
+  revealingKey,
   copiedKey,
   loading,
   error,
@@ -33,7 +36,9 @@ export function SecretList({
   selectedKey: string | null;
   onSelect: (secret: SecretSummary) => void;
   onCopy: (secret: SecretSummary) => void;
-  onReveal: (secret: SecretSummary) => void;
+  onToggleReveal: (secret: SecretSummary) => void;
+  revealedValues: Record<string, string>;
+  revealingKey: string | null;
   copiedKey: string | null;
   loading: boolean;
   error: Error | null;
@@ -138,6 +143,9 @@ export function SecretList({
       {secrets.map((secret) => {
         const selected = secret.key === selectedKey;
         const copied = secret.key === copiedKey;
+        const revealedValue = revealedValues[secret.key];
+        const isRevealed = revealedValue !== undefined;
+        const isRevealing = revealingKey === secret.key;
         return (
           <li
             key={`${secret.path}:${secret.key}`}
@@ -171,21 +179,38 @@ export function SecretList({
                   </span>
                   <Badge tone={selected ? "accent" : "neutral"}>{`v${secret.version}`}</Badge>
                 </span>
-                <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[10px] text-muted">
-                  <span className="shrink-0 font-mono tracking-[0.16em]" aria-hidden="true">
-                    {MASK}
+                {isRevealed ? (
+                  <span className="mt-0.5 block whitespace-pre-wrap break-all font-mono text-[11px] leading-4 text-ink">
+                    {revealedValue || "(empty value)"}
                   </span>
-                  <span className="shrink-0" aria-hidden="true">
-                    ·
+                ) : (
+                  <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[10px] text-muted">
+                    <span className="shrink-0 font-mono tracking-[0.16em]" aria-hidden="true">
+                      {MASK}
+                    </span>
+                    <span className="shrink-0" aria-hidden="true">
+                      ·
+                    </span>
+                    <span className="truncate font-mono">
+                      {secret.path === "/" ? "root" : secret.path}
+                    </span>
+                    <span className="shrink-0" aria-hidden="true">
+                      ·
+                    </span>
+                    <span className="shrink-0">{formatRelativeTime(secret.updatedAt)}</span>
                   </span>
-                  <span className="truncate font-mono">
-                    {secret.path === "/" ? "root" : secret.path}
+                )}
+                {isRevealed ? (
+                  <span className="mt-1 flex min-w-0 items-center gap-1.5 text-[10px] text-muted">
+                    <span className="truncate font-mono">
+                      {secret.path === "/" ? "root" : secret.path}
+                    </span>
+                    <span className="shrink-0" aria-hidden="true">
+                      ·
+                    </span>
+                    <span className="shrink-0">{formatRelativeTime(secret.updatedAt)}</span>
                   </span>
-                  <span className="shrink-0" aria-hidden="true">
-                    ·
-                  </span>
-                  <span className="shrink-0">{formatRelativeTime(secret.updatedAt)}</span>
-                </span>
+                ) : null}
               </span>
             </button>
 
@@ -202,11 +227,16 @@ export function SecretList({
                 />
               </IconButton>
               <IconButton
-                label="Reveal secret value"
-                onClick={() => onReveal(secret)}
+                label={isRevealed ? "Conceal secret value" : "Reveal secret value"}
+                onClick={() => onToggleReveal(secret)}
+                aria-pressed={isRevealed}
                 className="size-7"
               >
-                <Icon icon={EyeIcon} size={13} />
+                {isRevealing ? (
+                  <Spinner className="size-3" label="Revealing value" />
+                ) : (
+                  <Icon icon={isRevealed ? ViewOffSlashIcon : EyeIcon} size={13} />
+                )}
               </IconButton>
             </div>
           </li>

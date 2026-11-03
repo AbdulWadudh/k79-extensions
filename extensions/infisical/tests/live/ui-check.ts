@@ -125,7 +125,9 @@ try {
     console.log("read_only_identity=true");
   } else {
     await page.getByRole("button", { name: /New/ }).first().click();
-    await page.getByRole("textbox", { name: "Key", exact: true }).fill(smokeKey);
+    const keyInput = page.getByRole("textbox", { name: "Key", exact: true });
+    await keyInput.fill(smokeKey.toLowerCase());
+    assert.equal(await keyInput.inputValue(), smokeKey);
     await page.getByRole("textbox", { name: "Value", exact: true }).fill(smokeValue);
     await page
       .getByRole("textbox", { name: "Comment", exact: true })
@@ -134,6 +136,20 @@ try {
     await page.getByText(/Saved K79_SYNTHETIC_SMOKE_/).waitFor({ timeout: 30_000 });
     created = true;
 
+    await page.getByRole("button", { name: "Close inspector" }).click();
+    const syntheticRow = page.locator("li").filter({ hasText: smokeKey }).first();
+    await syntheticRow.getByRole("button", { name: "Reveal secret value" }).click();
+    await syntheticRow.getByText(smokeValue).waitFor({ timeout: 30_000 });
+    assert.equal(await page.getByText("Inspector").isVisible(), false);
+
+    await syntheticRow.getByRole("button", { name: "Conceal secret value" }).click();
+    assert.equal(await syntheticRow.getByText(smokeValue).isVisible(), false);
+    await syntheticRow.getByRole("button", { name: "Reveal secret value" }).click();
+    await syntheticRow.getByText(smokeValue).waitFor({ timeout: 30_000 });
+    await page.getByRole("button", { name: "Conceal all revealed values" }).click();
+    assert.equal(await syntheticRow.getByText(smokeValue).isVisible(), false);
+
+    await syntheticRow.getByRole("button").first().click();
     await page.getByRole("button", { name: "Reveal value" }).click();
     await page.getByText(smokeValue).waitFor({ timeout: 30_000 });
     await waitForSettled(page);
@@ -180,7 +196,8 @@ try {
   track(popup);
   await popup.setViewportSize({ width: 380, height: 560 });
   await popup.goto(`chrome-extension://${extensionId}/popup.html`);
-  await popup.getByText("Infisical Console").waitFor();
+  await popup.getByLabel("Filter secrets").waitFor({ timeout: 30_000 });
+  await popup.getByRole("button", { name: "Open side panel" }).waitFor();
   await popup.waitForTimeout(800);
   await waitForSettled(popup);
   await popup.screenshot({ path: join(reviewDir, "popup-380.png"), fullPage: true });

@@ -143,7 +143,7 @@
     {
       "name": "Secret Row",
       "kind": "custom",
-      "description": "The primary index entry. Value is always masked until the inspector is asked to reveal it.",
+      "description": "The primary index entry. Value stays masked until the inline eye action or the inspector is asked to reveal it.",
       "html": "<div class=\"ds-secret-row\"><div class=\"ds-secret-main\"><div class=\"ds-secret-key\">STRIPE_SECRET_KEY <span class=\"ds-secret-version\">v4</span></div><div class=\"ds-secret-meta\">•••••••••••• <span>·</span> /payments <span>·</span> 2 minutes ago</div></div><div class=\"ds-secret-actions\">⧉ ◉</div></div>",
       "css": ".ds-secret-row{display:flex;align-items:center;gap:10px;min-height:46px;padding:8px 12px;border-bottom:1px solid #d8d3c5;background:#faf8f1}.ds-secret-main{min-width:0;flex:1}.ds-secret-key{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#17231d;font:500 12px/1.4 'Cascadia Mono',monospace}.ds-secret-version{margin-left:6px;padding:1px 5px;border:1px solid #d8d3c5;border-radius:3px;color:#4f5e55;font-size:9px;letter-spacing:.08em}.ds-secret-meta{display:flex;gap:6px;margin-top:2px;color:#4f5e55;font:400 10px/1.4 'Cascadia Mono',monospace}.ds-secret-actions{display:flex;gap:2px;color:#4f5e55;font-size:13px}"
     }
@@ -182,7 +182,7 @@
     ],
     "dos": [
       "Do show project, environment, and path before any read, write, or delete.",
-      "Do keep values masked at a fixed width so length is not leaked.",
+      "Do keep values masked at a fixed width until an explicit inline reveal.",
       "Do use hairlines and tonal steps for structure.",
       "Do use Hugeicons at one stroke weight and label every icon-only control."
     ],

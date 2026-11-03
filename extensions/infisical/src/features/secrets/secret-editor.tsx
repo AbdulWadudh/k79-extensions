@@ -19,6 +19,7 @@ import type { MutationResult, SecretDetail, SecretScope, SecretSummary } from "@
 import { ErrorBanner } from "@/components/error-banner";
 import { Icon } from "@/components/icon";
 import { useCreateSecret, useUpdateSecret } from "@/features/secrets/queries";
+import { normalizeSecretKeyInput } from "@/lib/secret-key";
 import { RpcClientError } from "@/messaging/client";
 
 const secretFormSchema = z.object({
@@ -148,10 +149,12 @@ export function SecretEditor({
                   id="secret-key"
                   autoComplete="off"
                   spellCheck={false}
+                  autoCapitalize="characters"
                   className="font-mono"
                   placeholder="STRIPE_SECRET_KEY"
                   aria-invalid={fieldState.invalid}
                   disabled={readOnly}
+                  onChange={(event) => field.onChange(normalizeSecretKeyInput(event.target.value))}
                 />
                 {keyChanged ? (
                   <FieldDescription>
@@ -159,7 +162,8 @@ export function SecretEditor({
                   </FieldDescription>
                 ) : (
                   <FieldDescription>
-                    No slashes. Names are case-sensitive in Infisical.
+                    No slashes. Keys are normalized to UPPERCASE for Infisical projects that require
+                    it.
                   </FieldDescription>
                 )}
                 {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
