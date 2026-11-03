@@ -163,6 +163,8 @@ try {
     assert.equal(await syntheticRow.getByText(smokeValue).isVisible(), false);
 
     await syntheticRow.getByRole("button").first().click();
+    await page.getByText(`Copied ${smokeKey}`).waitFor({ timeout: 10_000 });
+    await syntheticRow.getByRole("button", { name: "View details" }).click();
     await page.getByRole("button", { name: "Reveal value" }).click();
     await page.getByText(smokeValue).waitFor({ timeout: 30_000 });
     await waitForSettled(page);

@@ -5,6 +5,7 @@ import {
   Folder01Icon,
   GlobeIcon,
   Key01Icon,
+  Link01Icon,
   LockKeyIcon,
   ServerStack01Icon,
   Shield01Icon,
@@ -30,6 +31,7 @@ import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import type { Environment, Project } from "@/api/types";
+import { BrandMark } from "@/components/brand";
 import { ErrorBanner } from "@/components/error-banner";
 import { Icon } from "@/components/icon";
 import { useConnect, useProjects } from "@/features/connection/queries";
@@ -200,9 +202,7 @@ export function Onboarding({
       <aside className="border-b border-black/20 bg-rail px-4 py-3 text-rail-ink min-[720px]:flex min-[720px]:flex-col min-[720px]:border-b-0 min-[720px]:border-r min-[720px]:border-black/20 min-[720px]:p-5">
         <div className="flex items-center justify-between gap-3 min-[720px]:block">
           <div className="flex items-center gap-2">
-            <div className="grid size-7 place-items-center rounded-xs border border-rail-ink/25 bg-rail-ink/10 font-mono text-[12px] font-semibold">
-              K
-            </div>
+            <BrandMark className="size-8" />
             <div>
               <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-rail-muted">
                 K79 / Extensions
@@ -371,6 +371,40 @@ export function Onboarding({
                     </Field>
                   )}
                 />
+
+                <div className="rounded-sm border border-line bg-surface/60 p-3">
+                  <div className="flex items-center gap-2 text-[11px] font-semibold text-ink">
+                    <Icon icon={Key01Icon} size={14} className="text-accent" />
+                    Where do I get these?
+                  </div>
+                  <ol className="mt-2 grid list-decimal gap-1 pl-4 text-[11px] leading-4 text-muted marker:text-muted">
+                    <li>Open Infisical → Access Control → Machine Identities.</li>
+                    <li>Create an identity, enable Universal Auth, and add a Client Secret.</li>
+                    <li>
+                      Attach the identity to the project and copy the Client ID and Secret here.
+                    </li>
+                  </ol>
+                  <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+                    <a
+                      href="https://infisical.com/docs/documentation/platform/identities/machine-identities"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-[11px] font-medium text-accent underline underline-offset-2 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+                    >
+                      Machine identities guide
+                      <Icon icon={Link01Icon} size={11} />
+                    </a>
+                    <a
+                      href="https://infisical.com/docs/documentation/platform/identities/universal-auth"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-[11px] font-medium text-accent underline underline-offset-2 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+                    >
+                      Universal Auth guide
+                      <Icon icon={Link01Icon} size={11} />
+                    </a>
+                  </div>
+                </div>
 
                 <Controller
                   name="rememberCredentials"

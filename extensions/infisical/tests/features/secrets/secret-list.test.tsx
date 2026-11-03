@@ -27,7 +27,6 @@ function renderList(overrides: Partial<ComponentProps<typeof SecretList>> = {}) 
       onToggleReveal={vi.fn()}
       revealedValues={{}}
       revealingKey={null}
-      copiedKey={null}
       loading={false}
       error={null}
       foldersError={null}
@@ -49,17 +48,18 @@ describe("SecretList", () => {
     expect(screen.queryByText("super-secret")).not.toBeInTheDocument();
   });
 
-  it("selects and copies a secret from its row", async () => {
+  it("copies from the row and opens details from the dedicated button", async () => {
     const user = userEvent.setup();
     const onSelect = vi.fn();
     const onCopy = vi.fn();
     renderList({ onSelect, onCopy });
 
-    await user.click(screen.getByRole("button", { name: /STRIPE_SECRET_KEY/ }));
-    expect(onSelect).toHaveBeenCalledWith(secret);
-
-    await user.click(screen.getByRole("button", { name: "Copy secret value" }));
+    await user.click(screen.getByRole("button", { name: new RegExp(`^Copy${secret.key}`) }));
     expect(onCopy).toHaveBeenCalledWith(secret);
+    expect(onSelect).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "View details" }));
+    expect(onSelect).toHaveBeenCalledWith(secret);
   });
 
   it("teaches the empty state when the folder has no folders or secrets", () => {

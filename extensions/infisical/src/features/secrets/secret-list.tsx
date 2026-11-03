@@ -1,7 +1,6 @@
 import {
   ArrowRight01Icon,
   Copy01Icon,
-  CopyCheckIcon,
   EyeIcon,
   Folder01Icon,
   Key01Icon,
@@ -27,7 +26,6 @@ export function SecretList({
   onToggleReveal,
   revealedValues,
   revealingKey,
-  copiedKey,
   loading,
   error,
   foldersError,
@@ -46,7 +44,6 @@ export function SecretList({
   onToggleReveal: (secret: SecretSummary) => void;
   revealedValues: Record<string, string>;
   revealingKey: string | null;
-  copiedKey: string | null;
   loading: boolean;
   error: Error | null;
   foldersError: Error | null;
@@ -183,7 +180,6 @@ export function SecretList({
         ))}
         {secrets.map((secret) => {
           const selected = secret.key === selectedKey;
-          const copied = secret.key === copiedKey;
           const revealedValue = revealedValues[secret.key];
           const isRevealed = revealedValue !== undefined;
           const isRevealing = revealingKey === secret.key;
@@ -203,11 +199,13 @@ export function SecretList({
                   else rowRefs.current.delete(secret.key);
                 }}
                 type="button"
-                onClick={() => onSelect(secret)}
+                onClick={() => onCopy(secret)}
                 onKeyDown={(event) => onRowKeyDown(event, secret)}
                 aria-current={selected ? "true" : undefined}
+                title={`Copy ${secret.key}`}
                 className="flex min-w-0 flex-1 items-center gap-2.5 px-3 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus"
               >
+                <span className="sr-only">Copy </span>
                 <Icon
                   icon={Key01Icon}
                   size={14}
@@ -257,17 +255,6 @@ export function SecretList({
 
               <div className="flex shrink-0 items-center gap-0.5 pr-2 opacity-100 transition-opacity min-[480px]:opacity-0 min-[480px]:group-focus-within:opacity-100 min-[480px]:group-hover:opacity-100">
                 <IconButton
-                  label={copied ? "Copied" : "Copy secret value"}
-                  onClick={() => onCopy(secret)}
-                  className="size-7"
-                >
-                  <Icon
-                    icon={copied ? CopyCheckIcon : Copy01Icon}
-                    size={13}
-                    className={copied ? "text-success" : undefined}
-                  />
-                </IconButton>
-                <IconButton
                   label={isRevealed ? "Conceal secret value" : "Reveal secret value"}
                   onClick={() => onToggleReveal(secret)}
                   aria-pressed={isRevealed}
@@ -278,6 +265,20 @@ export function SecretList({
                   ) : (
                     <Icon icon={isRevealed ? ViewOffSlashIcon : EyeIcon} size={13} />
                   )}
+                </IconButton>
+                <IconButton
+                  label="Copy secret value"
+                  onClick={() => onCopy(secret)}
+                  className="size-7"
+                >
+                  <Icon icon={Copy01Icon} size={13} />
+                </IconButton>
+                <IconButton
+                  label="View details"
+                  onClick={() => onSelect(secret)}
+                  className="size-7"
+                >
+                  <Icon icon={ArrowRight01Icon} size={13} />
                 </IconButton>
               </div>
             </li>

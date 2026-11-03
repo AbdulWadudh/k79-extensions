@@ -210,7 +210,7 @@ The environment rail uses full-height rectangular tabs, not rounded pills. Secre
 
 - **Structure:** key + version badge on the first line; fixed-width mask, path, and relative age on the second.
 - **Selected:** sage-soft fill with a one-pixel bottle-green left rule. Do not use a thick accent bar or glow.
-- **Actions:** copy and reveal appear on hover/focus at 480px+, always visible below 480px. Reveal is inline and toggles the value in the row; row click opens the inspector.
+- **Actions:** reveal, copy, and details appear on hover/focus at 480px+, always visible below 480px. Reveal is inline and toggles the value in the row. Row click copies; the dedicated details icon opens the inspector.
 - **Empty:** teach the next action; no lock-and-key illustration.
 
 ### Environment Rail
@@ -230,7 +230,7 @@ The environment rail uses full-height rectangular tabs, not rounded pills. Secre
 
 - **Do** show project, environment, and path before any read, write, or delete.
 - **Do** keep values masked at a fixed width so length is not leaked until an inline reveal.
-- **Do** keep row reveal inline and row click for the inspector.
+- **Do** keep row reveal inline, row click for copy, and a dedicated details icon for the inspector.
 - **Do** use hairlines and tonal steps for structure.
 - **Do** keep the primary accent to actions, selection, and scope state.
 - **Do** use Hugeicons at one stroke weight and label every icon-only control.

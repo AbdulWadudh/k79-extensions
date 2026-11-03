@@ -83,8 +83,8 @@ All Infisical tests live under `extensions/infisical/tests/`:
 ## Use it
 
 - Folders render as rows above secrets. Click a folder to enter it; use the up control in the path bar to return.
-- Click a row to open the inspector. The eye action reveals the value inline without opening the card.
-- Edit and Delete sit inline beneath the key in the inspector.
+- Click a row to copy the value. The eye action reveals inline; the details icon opens the inspector.
+- Edit and Delete are icon-only controls in the inspector header.
 - The popup runs the full console. The panel icon in its path row opens the same session in the side panel.
 
 ## Live testing
@@ -144,6 +144,10 @@ k79-extensions/
 - No remote code or remote fonts.
 - A 403 marks the scope read-only; mutations are disabled.
 - The extension never claims to bypass Infisical RBAC or audit logging.
+
+## Marks
+
+Infisical and the Infisical logo are trademarks of Infisical, Inc. They are used here to identify the integration target. This extension is not an official Infisical product.
 
 ## License
 

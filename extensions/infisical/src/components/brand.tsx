@@ -2,16 +2,13 @@ import { cn } from "@k79/ui";
 
 export function BrandMark({ className }: { className?: string }) {
   return (
-    <div
-      className={cn(
-        "relative grid size-7 shrink-0 place-items-center overflow-hidden rounded-xs border border-current/25 bg-rail text-rail-ink",
-        className,
-      )}
-      aria-hidden="true"
-    >
-      <span className="font-mono text-[12px] font-semibold leading-none tracking-[-0.08em]">K</span>
-      <span className="absolute bottom-1 right-1 size-1 rounded-full bg-[#cfe3d6]" />
-    </div>
+    <img
+      src="/brand/infisical.svg"
+      alt=""
+      width={28}
+      height={28}
+      className={cn("size-7 shrink-0 rounded-xs", className)}
+    />
   );
 }
 

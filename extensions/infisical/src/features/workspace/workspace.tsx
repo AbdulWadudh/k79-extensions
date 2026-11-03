@@ -58,7 +58,6 @@ export function Workspace({
   const [inlineSecrets, setInlineSecrets] = useState<Record<string, string>>({});
   const [revealingKey, setRevealingKey] = useState<string | null>(null);
   const [view, setView] = useState<View>("list");
-  const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [toast, setToast] = useState<Toast | null>(null);
   const [pathError, setPathError] = useState<string | undefined>();
   const [readOnly, setReadOnly] = useState(false);
@@ -144,12 +143,6 @@ export function Workspace({
     const timer = window.setTimeout(() => setToast(null), 2_600);
     return () => window.clearTimeout(timer);
   }, [toast]);
-
-  useEffect(() => {
-    if (!copiedKey) return;
-    const timer = window.setTimeout(() => setCopiedKey(null), 1_400);
-    return () => window.clearTimeout(timer);
-  }, [copiedKey]);
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
@@ -315,7 +308,6 @@ export function Workspace({
     try {
       const value = inlineSecrets[secret.key] ?? (await fetchSecretValue(secret)).value;
       await copyText(value);
-      setCopiedKey(secret.key);
       showToast(`Copied ${secret.key}`);
     } catch (error) {
       showToast(errorMessage(error), "danger");
@@ -437,7 +429,6 @@ export function Workspace({
               onToggleReveal={(secret) => void toggleInlineReveal(secret)}
               revealedValues={inlineSecrets}
               revealingKey={revealingKey}
-              copiedKey={copiedKey}
               loading={secretsQuery.isLoading || foldersQuery.isLoading}
               error={secretsError}
               foldersError={foldersError}

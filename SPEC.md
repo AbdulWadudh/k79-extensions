@@ -146,15 +146,16 @@ Each row shows:
 - Masked value: a fixed-width mask that does **not** reveal value length.
 - Folder path (when not at root), muted.
 - A small metadata line: version and relative update time.
-- Hover/focus actions: Reveal, Copy, More.
+- Hover/focus actions: Reveal, Copy, Details.
 - A selected state with a solid accent rail, not a glow.
 
 Behavior:
 
 - Values are not fetched during list load. The list request uses `viewSecretValue=false`.
 - Reveal fetches the single secret with `viewSecretValue=true`; the value stays in memory for the current panel session.
-- Row reveal is inline: the eye action shows the value in the row without opening the inspector. Row click opens the inspector.
-- The inspector has its own reveal control; Edit and Delete sit inline beneath the key, not in a global footer bar.
+- Row reveal is inline: the eye action shows the value in the row without opening the inspector.
+- Row click copies the value. A dedicated details icon opens the inspector.
+- The inspector has its own reveal control; Edit and Delete are icon-only controls in the inspector header.
 - Copy fetches the value if needed, writes to the clipboard, and shows a short confirmation with the key name.
 - “Conceal all” clears inline and inspector values.
 - Search is local and never queries values.
@@ -189,7 +190,7 @@ The confirmation names the key, project, environment, and path. The destructive 
 | --- | --- |
 | `/` or `⌘/Ctrl+K` | Focus search |
 | `↑` / `↓` | Move selection |
-| `Enter` | Open inspector |
+| `Enter` | Copy focused row |
 | `R` | Reveal selected value |
 | `⌘/Ctrl+C` | Copy selected value |
 | `E` | Edit selected secret |

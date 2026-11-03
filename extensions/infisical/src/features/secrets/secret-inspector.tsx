@@ -7,7 +7,7 @@ import {
   EyeIcon,
   ViewOffSlashIcon,
 } from "@hugeicons/core-free-icons";
-import { Badge, Button, cn, IconButton, Skeleton } from "@k79/ui";
+import { Badge, cn, IconButton, Skeleton } from "@k79/ui";
 import type { SecretDetail, SecretSummary } from "@/api/types";
 import { ErrorBanner } from "@/components/error-banner";
 import { Icon } from "@/components/icon";
@@ -54,6 +54,12 @@ export function SecretInspector({
           Inspector
         </span>
         <span className="ml-auto" />
+        <IconButton label="Edit" onClick={onEdit} disabled={readOnly}>
+          <Icon icon={Edit02Icon} size={15} />
+        </IconButton>
+        <IconButton label="Delete" onClick={onDelete} disabled={readOnly} tone="danger">
+          <Icon icon={Delete02Icon} size={15} />
+        </IconButton>
         <IconButton label="Close inspector" onClick={onBack}>
           <Icon icon={Cancel01Icon} size={15} />
         </IconButton>
@@ -72,29 +78,11 @@ export function SecretInspector({
           {secret.key}
         </h2>
         <p className="mt-1 font-mono text-[10px] text-muted">{secret.path}</p>
-
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <Button type="button" variant="secondary" size="sm" onClick={onEdit} disabled={readOnly}>
-            <Icon icon={Edit02Icon} size={14} />
-            Edit
-          </Button>
-          <Button
-            type="button"
-            variant="quiet"
-            size="sm"
-            className="text-danger hover:bg-danger-soft hover:text-danger"
-            onClick={onDelete}
-            disabled={readOnly}
-          >
-            <Icon icon={Delete02Icon} size={14} />
-            Delete
-          </Button>
-          {readOnly ? (
-            <span className="text-[10px] leading-4 text-warning">
-              This identity can read this scope but cannot change it.
-            </span>
-          ) : null}
-        </div>
+        {readOnly ? (
+          <p className="mt-2 text-[10px] leading-4 text-warning">
+            This identity can read this scope but cannot change it.
+          </p>
+        ) : null}
 
         <div className="mt-5 rounded-sm border border-line bg-surface-raised">
           <div className="flex items-center justify-between gap-2 border-b border-line px-3 py-2">
