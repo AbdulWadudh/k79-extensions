@@ -3,7 +3,6 @@ import {
   ChevronDownIcon,
   EyeIcon,
   Folder01Icon,
-  GlobeIcon,
   PlusSignIcon,
   Refresh01Icon,
   Search01Icon,
@@ -188,6 +187,7 @@ export function WorkspaceHeader({
   onToggleRevealAll,
   allRevealed,
   revealingAll,
+  revealAllDisabled,
   onOpenInfisical,
   search,
   onSearchChange,
@@ -213,6 +213,7 @@ export function WorkspaceHeader({
   onToggleRevealAll: () => void;
   allRevealed: boolean;
   revealingAll: boolean;
+  revealAllDisabled?: boolean;
   onOpenInfisical: () => void;
   search: string;
   onSearchChange: (value: string) => void;
@@ -228,7 +229,15 @@ export function WorkspaceHeader({
   return (
     <header className="shrink-0 border-b border-line bg-surface">
       <div className="flex h-[52px] items-center gap-2 px-3">
-        <BrandMark />
+        <button
+          type="button"
+          onClick={onOpenInfisical}
+          aria-label="Open Infisical"
+          title="Open this folder in Infisical"
+          className="shrink-0 rounded-sm transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+        >
+          <BrandMark />
+        </button>
 
         <div className="mx-1 h-5 w-px bg-line" aria-hidden="true" />
 
@@ -281,7 +290,7 @@ export function WorkspaceHeader({
             label={allRevealed ? "Conceal all secret values" : "Reveal all secret values"}
             onClick={onToggleRevealAll}
             aria-pressed={allRevealed}
-            disabled={revealingAll}
+            disabled={revealingAll || revealAllDisabled}
           >
             {revealingAll ? (
               <Spinner className="size-3.5" label="Revealing all values" />
@@ -320,9 +329,6 @@ export function WorkspaceHeader({
           onPathChange={onPathChange}
           error={pathError}
         />
-        <IconButton label="Open Infisical" onClick={onOpenInfisical} className="size-6">
-          <Icon icon={GlobeIcon} size={14} />
-        </IconButton>
         {onOpenSidePanel ? (
           <IconButton label="Open side panel" onClick={onOpenSidePanel} className="size-6">
             <Icon icon={SidebarRight01Icon} size={14} />
@@ -340,7 +346,7 @@ export function WorkspaceHeader({
           ref={searchRef}
           value={search}
           onChange={(event) => onSearchChange(event.target.value)}
-          placeholder="Filter by key, path, or comment"
+          placeholder="Filter key, path, or comment in this folder and below"
           aria-label="Filter secrets"
           className="min-w-0 flex-1 bg-transparent text-[12px] text-ink placeholder:text-muted/70 focus:outline-none"
         />

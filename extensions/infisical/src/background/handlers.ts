@@ -62,18 +62,22 @@ async function dispatch(request: RpcRequest): Promise<unknown> {
 
     case "folders.list": {
       const prefs = await getPrefs();
-      return withAuthRetry((token) => listFolders(prefs.baseUrl, token, request.payload.scope));
+      return withAuthRetry((token) =>
+        listFolders(prefs.baseUrl, token, request.payload.scope, request.payload.recursive),
+      );
     }
 
     case "secrets.list": {
       const prefs = await getPrefs();
-      return withAuthRetry((token) => listSecrets(prefs.baseUrl, token, request.payload.scope));
+      return withAuthRetry((token) =>
+        listSecrets(prefs.baseUrl, token, request.payload.scope, request.payload.recursive),
+      );
     }
 
     case "secrets.listValues": {
       const prefs = await getPrefs();
       return withAuthRetry((token) =>
-        listSecretValues(prefs.baseUrl, token, request.payload.scope),
+        listSecretValues(prefs.baseUrl, token, request.payload.scope, request.payload.recursive),
       );
     }
 

@@ -92,7 +92,7 @@ The extension is not a secret browser for unauthorized users. It uses the permis
 
 **Side panel — full workspace.** Chrome 116+ side panel, 320–800 px wide. This is the primary surface for browsing and editing.
 
-**Toolbar popup — compact console.** 380 px wide, 520 px tall. Runs the same onboarding, workspace, list, inline reveal, inspector, editor, and settings surfaces as the side panel. It is a complete working surface, not a teaser. An optional “Open side panel” control in the workspace header moves the same session into the side panel.
+**Toolbar popup — compact console.** 456 px wide, 600 px tall (Chrome’s maximum popup height). Runs the same onboarding, workspace, list, inline reveal, inspector, editor, and settings surfaces as the side panel. It is a complete working surface, not a teaser. An optional “Open side panel” control in the workspace header moves the same session into the side panel.
 
 **Onboarding — inside the side panel.** No separate options page for the first run. Three steps:
 
@@ -108,7 +108,7 @@ Side panel
 ├─ Workspace
 │  ├─ Scope header        project / environment / connection state
 │  ├─ Path bar            / / / / current folder, recent paths, up one level
-│  ├─ Search              local filter, keyboard shortcut
+│  ├─ Search              local filter across this folder and descendants
 │  ├─ Secret list         rows, folder grouping, counts, loading/empty/error states
 │  ├─ Inspector          detail + inline edit + reveal/copy/delete (wide layout)
 │  └─ Editor             create only (pane on wide, pushed page on narrow)
@@ -131,7 +131,7 @@ Side panel
 The signature structure is **index and leaf**:
 
 - **Wide (≥ 640 px):** a narrow vertical environment/index rail on the left, the secret list in the middle, and a 280–320 px inspector on the right. The rail gives one-click environment switching without a modal.
-- **Dashboard access:** the path row has a globe control that opens the exact project overview in Infisical: `/organizations/{orgId}/projects/secret-management/{projectId}/overview` on the appropriate cloud or self-hosted origin.
+- **Dashboard access:** the Infisical brand mark opens the current project and folder in Infisical: `/organizations/{orgId}/projects/secret-management/{projectId}/overview?secretPath=%2Ffolder` on the appropriate cloud or self-hosted origin. There is no separate globe control.
 - **Medium (480–639 px):** top scope band and list; selecting a row pushes a full-height inspector page with a back control.
 - **Narrow (320–479 px):** same as medium, with the environment selector collapsed into a labeled chip and the path bar reduced to a breadcrumb that can be scrolled horizontally.
 - **No horizontal page scroll at any supported width.**
@@ -156,11 +156,12 @@ Behavior:
 - Reveal fetches the single secret with `viewSecretValue=true`; the value stays in memory for the current panel session.
 - Row reveal is inline: the eye action shows the value in the row without opening the inspector.
 - Row click copies the value. A dedicated details icon opens the inspector.
-- The header reveal control is a toggle: if any value is revealed it conceals all; otherwise it fetches and reveals all visible values in the current folder.
+- The header reveal control is a toggle: if any value is revealed it conceals all; otherwise it fetches and reveals all visible values in the current scope.
 - The inspector value card header shows the actual secret key. Reveal, copy, edit, and delete are icon-only controls in the card’s bottom-right footer.
 - Copy fetches the value if needed, writes to the clipboard, and shows a short confirmation with the key name.
 - “Conceal all” clears inline and inspector values.
-- Search is local and never queries values.
+- Search filters locally and never queries values. While a query is active, folder and secret lists include descendants of the current folder, matched against key, path, or comment.
+- Each result keeps its own path for selection, reveal, copy, edit, and delete, so identical keys in different folders stay distinct.
 
 ### 5.5 Inspector
 
@@ -611,7 +612,7 @@ Conventions:
 - Force 403 and verify mutation controls are disabled.
 - Restart the service worker and verify session recovery.
 - Open the popup and open the side panel.
-- Capture 360 px and 800 px side-panel screenshots, plus the 380 px popup; run axe on each.
+- Capture 360 px and 800 px side-panel screenshots, plus the 456 px popup; run axe on each.
 
 ### Live smoke test
 
@@ -673,7 +674,7 @@ At least 80% statements and branches for `src/api`, `src/domain`, `src/backgroun
 ### Secrets
 
 - [x] Listing never fetches values.
-- [x] Search filters by key, path, and comment without a network request.
+- [x] Search filters by key, path, and comment, including descendant folders, without fetching values.
 - [x] Reveal and copy fetch exactly one secret and keep the value in memory only.
 - [x] Create, edit, rename, and delete are reflected in Infisical and in the list.
 - [ ] A failed mutation preserves the draft and does not report success.
@@ -685,7 +686,7 @@ At least 80% statements and branches for `src/api`, `src/domain`, `src/backgroun
 ### UX and accessibility
 
 - [x] Side panel works at 360 px and 800 px without horizontal page scroll.
-- [x] Popup works at 380 px as a complete console and offers an optional side-panel control.
+- [x] Popup works at 456 px as a complete console and offers an optional side-panel control.
 - [ ] All primary flows are keyboard-completable.
 - [x] Focus is visible and never clipped; icon-only controls have accessible names.
 - [x] Reduced motion is respected.

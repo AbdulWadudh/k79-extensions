@@ -13,13 +13,14 @@ import type { FolderSummary, SecretSummary } from "@/api/types";
 import { ErrorBanner } from "@/components/error-banner";
 import { Icon } from "@/components/icon";
 import { formatRelativeTime } from "@/lib/format";
+import { secretIdentity } from "@/lib/secret-identity";
 
 const MASK = "••••••••••••";
 
 export function SecretList({
   folders,
   secrets,
-  selectedKey,
+  selectedId,
   onSelect,
   onOpenFolder,
   onCopy,
@@ -37,7 +38,7 @@ export function SecretList({
 }: {
   folders: FolderSummary[];
   secrets: SecretSummary[];
-  selectedKey: string | null;
+  selectedId: string | null;
   onSelect: (secret: SecretSummary) => void;
   onOpenFolder: (folder: FolderSummary) => void;
   onCopy: (secret: SecretSummary) => void;
@@ -55,30 +56,31 @@ export function SecretList({
 }) {
   const rowRefs = useRef(new Map<string, HTMLButtonElement>());
 
-  function moveFocus(currentKey: string, direction: -1 | 1) {
-    const index = secrets.findIndex((secret) => secret.key === currentKey);
+  function moveFocus(currentId: string, direction: -1 | 1) {
+    const index = secrets.findIndex((secret) => secretIdentity(secret) === currentId);
     const next = secrets[index + direction];
-    if (next) rowRefs.current.get(next.key)?.focus();
+    if (next) rowRefs.current.get(secretIdentity(next))?.focus();
   }
 
   function onRowKeyDown(event: KeyboardEvent<HTMLButtonElement>, secret: SecretSummary) {
+    const id = secretIdentity(secret);
     if (event.key === "ArrowDown") {
       event.preventDefault();
-      moveFocus(secret.key, 1);
+      moveFocus(id, 1);
     }
     if (event.key === "ArrowUp") {
       event.preventDefault();
-      moveFocus(secret.key, -1);
+      moveFocus(id, -1);
     }
     if (event.key === "Home") {
       event.preventDefault();
       const first = secrets[0];
-      if (first) rowRefs.current.get(first.key)?.focus();
+      if (first) rowRefs.current.get(secretIdentity(first))?.focus();
     }
     if (event.key === "End") {
       event.preventDefault();
       const last = secrets.at(-1);
-      if (last) rowRefs.current.get(last.key)?.focus();
+      if (last) rowRefs.current.get(secretIdentity(last))?.focus();
     }
   }
 
@@ -179,13 +181,14 @@ export function SecretList({
           </li>
         ))}
         {secrets.map((secret) => {
-          const selected = secret.key === selectedKey;
-          const revealedValue = revealedValues[secret.key];
+          const id = secretIdentity(secret);
+          const selected = id === selectedId;
+          const revealedValue = revealedValues[id];
           const isRevealed = revealedValue !== undefined;
-          const isRevealing = revealingKey === secret.key;
+          const isRevealing = revealingKey === id;
           return (
             <li
-              key={`${secret.path}:${secret.key}`}
+              key={id}
               className={cn(
                 "group flex items-stretch border-b border-line transition-colors",
                 selected
@@ -195,8 +198,8 @@ export function SecretList({
             >
               <button
                 ref={(node) => {
-                  if (node) rowRefs.current.set(secret.key, node);
-                  else rowRefs.current.delete(secret.key);
+                  if (node) rowRefs.current.set(id, node);
+                  else rowRefs.current.delete(id);
                 }}
                 type="button"
                 onClick={() => onCopy(secret)}

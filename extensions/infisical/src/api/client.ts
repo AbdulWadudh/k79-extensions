@@ -134,6 +134,7 @@ export async function listFolders(
   baseUrl: string,
   token: string,
   scope: SecretScope,
+  recursive = false,
 ): Promise<FolderSummary[]> {
   const response = await requestJson(baseUrl, "/api/v2/folders", {
     token,
@@ -141,7 +142,7 @@ export async function listFolders(
       projectId: scope.projectId,
       environment: scope.environment,
       path: scope.secretPath,
-      recursive: "false",
+      recursive: String(recursive),
     },
   });
 
@@ -154,6 +155,7 @@ export async function listSecrets(
   baseUrl: string,
   token: string,
   scope: SecretScope,
+  recursive = false,
 ): Promise<SecretSummary[]> {
   const response = await requestJson(baseUrl, "/api/v4/secrets", {
     token,
@@ -163,7 +165,7 @@ export async function listSecrets(
       secretPath: scope.secretPath,
       viewSecretValue: "false",
       expandSecretReferences: "false",
-      recursive: "false",
+      recursive: String(recursive),
       includeImports: "false",
     },
   });
@@ -175,6 +177,7 @@ export async function listSecretValues(
   baseUrl: string,
   token: string,
   scope: SecretScope,
+  recursive = false,
 ): Promise<SecretDetail[]> {
   const response = await requestJson(baseUrl, "/api/v4/secrets", {
     token,
@@ -184,7 +187,7 @@ export async function listSecretValues(
       secretPath: scope.secretPath,
       viewSecretValue: "true",
       expandSecretReferences: "false",
-      recursive: "false",
+      recursive: String(recursive),
       includeImports: "false",
     },
   });

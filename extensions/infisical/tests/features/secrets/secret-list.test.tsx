@@ -4,6 +4,7 @@ import type { ComponentProps } from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { SecretSummary } from "@/api/types";
 import { SecretList } from "@/features/secrets/secret-list";
+import { secretIdentity } from "@/lib/secret-identity";
 
 const secret: SecretSummary = {
   id: "secret-1",
@@ -20,7 +21,7 @@ function renderList(overrides: Partial<ComponentProps<typeof SecretList>> = {}) 
     <SecretList
       folders={[]}
       secrets={[secret]}
-      selectedKey={null}
+      selectedId={null}
       onSelect={vi.fn()}
       onOpenFolder={vi.fn()}
       onCopy={vi.fn()}
@@ -92,12 +93,27 @@ describe("SecretList", () => {
     expect(onSelect).not.toHaveBeenCalled();
   });
 
+  it("distinguishes the same key in different folders", () => {
+    const child = { ...secret, id: "secret-2", path: "/LMS-BACKEND" };
+    renderList({
+      secrets: [secret, child],
+      selectedId: secretIdentity(child),
+      revealedValues: { [secretIdentity(child)]: "child-value" },
+    });
+
+    expect(screen.getByText("child-value")).toBeInTheDocument();
+    const rows = screen.getAllByTitle(`Copy ${secret.key}`);
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).not.toHaveAttribute("aria-current");
+    expect(rows[1]).toHaveAttribute("aria-current", "true");
+  });
+
   it("renders an inline revealed value and its conceal action", async () => {
     const user = userEvent.setup();
     const onToggleReveal = vi.fn();
     renderList({
       onToggleReveal,
-      revealedValues: { [secret.key]: "synthetic-value" },
+      revealedValues: { [secretIdentity(secret)]: "synthetic-value" },
     });
 
     expect(screen.getByText("synthetic-value")).toBeInTheDocument();

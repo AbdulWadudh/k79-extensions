@@ -85,7 +85,8 @@ All Infisical tests live under `extensions/infisical/tests/`:
 - Folders render as rows above secrets. Click a folder to enter it; use the up control in the path bar to return.
 - Click a row to copy the value. The row actions are reveal, copy, and details.
 - The header reveal control is a toggle: reveal all visible values, then conceal all.
-- The globe control in the path row opens the exact project overview in the Infisical dashboard: organization, project, and environment context from the connection.
+- Filter by key, path, or comment. While a filter is active, it searches the current folder and all of its descendants.
+- The Infisical brand mark opens the exact project and folder in the Infisical dashboard, using the connected organization and project IDs.
 - In the inspector, the value card header shows the key; reveal, copy, edit, and delete are in the card’s bottom-right footer. Edit switches the key and value to inline textboxes.
 - The popup runs the full console. The panel icon in its path row opens the same session in the side panel.
 

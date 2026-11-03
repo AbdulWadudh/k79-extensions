@@ -160,12 +160,13 @@ The palette is restrained and warm: a paper-neutral ground, a dark green working
 
 The signature structure is **index and leaf**.
 
-- **Narrow (320–479px) and popup:** one column. Brand, project, and actions occupy a 52px top bar; environment, path, and count sit in a second row; search in a third. Selecting a secret pushes a full-height inspector; editing pushes a full-height editor. The 380×520 toolbar popup is the default compact console; the optional side-panel control lives in the path row.
+- **Narrow (320–479px) and popup:** one column. Brand, project, and actions occupy a 52px top bar; environment, path, and count sit in a second row; search in a third. Selecting a secret pushes a full-height inspector; editing pushes a full-height editor. The 456×600 toolbar popup is the default compact console; the optional side-panel control lives in the path row.
 - **Medium (480–639px):** the environment picker returns to the top bar. The list remains single-column; inspector and editor still push.
 - **Wide (640px+):** a 56px dark environment rail joins the left edge. At 700px+ the list and a 340px inspector/editor share the body. The rail is quick environment switching, not a second navigation system.
 - **Density:** 44–48px secret rows, 36px controls, 1px separators, 12–16px panel padding. No horizontal page scroll at supported widths.
 - **Page frame:** the side panel or popup is the viewport. Do not add a centered page shell, hero, or card grid around the workspace.
-- **Dashboard access:** the path row has a globe control that opens the exact Infisical project overview, not the dashboard home.
+- **Dashboard access:** the Infisical brand mark opens the exact project and folder in Infisical; there is no separate globe control.
+- **Scrollbars:** thin, theme-colored thumbs with transparent tracks and no arrow buttons.
 
 ## Elevation & Depth
 

@@ -24,7 +24,7 @@ A fast, keyboard-first companion to Infisical that keeps the dangerous parts del
 
 ## Operating Context
 
-- Used in Chrome’s side panel or a 380 px toolbar popup, frequently beside an IDE or terminal.
+- Used in Chrome’s side panel or a 456 px toolbar popup, frequently beside an IDE or terminal.
 - Used on trusted workstations, often for long sessions, sometimes at night.
 - Users may work with Infisical Cloud (US or EU region) or a self-hosted instance.
 - Projects are scoped by RBAC. A machine identity may legitimately be unable to list all projects.

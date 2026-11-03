@@ -120,7 +120,7 @@ Skills: `spec-driven-development`, `planning-and-task-breakdown`, `incremental-i
 - Motion: 150–220 ms, state-driven, respect `prefers-reduced-motion`.
 - Every control defines default, hover, focus, active, disabled, loading, error.
 - Accessibility: WCAG 2.2 AA; visible focus; full keyboard path; labels; errors announced; no color-only meaning.
-- Test at 360 px, 800 px, and 380 px popup. No horizontal page scroll.
+- Test at 360 px, 800 px, and 456 px popup. No horizontal page scroll.
 
 ## Security
 

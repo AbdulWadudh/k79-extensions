@@ -21,6 +21,7 @@ import { SettingsPanel } from "@/features/settings/settings-panel";
 import { copyText } from "@/lib/clipboard";
 import { infisicalProjectUrl, openInfisicalDashboard } from "@/lib/infisical-dashboard";
 import { queryKeys } from "@/lib/query-keys";
+import { secretIdentity } from "@/lib/secret-identity";
 import { rpc } from "@/messaging/client";
 import type { ConnectionStatus } from "@/messaging/protocol";
 import { EnvironmentRail } from "./env-rail";
@@ -53,7 +54,7 @@ export function Workspace({
   const queryClient = useQueryClient();
   const searchRef = useRef<HTMLInputElement>(null);
   const [search, setSearch] = useState("");
-  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [selection, setSelection] = useState<SecretSummary | null>(null);
   const [revealed, setRevealed] = useState(false);
   const [inlineSecrets, setInlineSecrets] = useState<Record<string, string>>({});
   const [revealingKey, setRevealingKey] = useState<string | null>(null);
@@ -73,21 +74,33 @@ export function Workspace({
         }
       : null;
 
+  function scopeForSecret(secret: SecretSummary): SecretScope | null {
+    return scope ? { ...scope, secretPath: secret.path } : null;
+  }
+
+  const searchActive = search.trim().length > 0;
   const projectsQuery = useProjects(true);
-  const foldersQuery = useFolders(scope);
-  const secretsQuery = useSecrets(scope);
+  const foldersQuery = useFolders(scope, searchActive);
+  const secretsQuery = useSecrets(scope, searchActive);
   const setScope = useSetScope();
-  const detailQuery = useSecretDetail(
-    scope,
-    selectedKey,
-    Boolean(selectedKey) && (revealed || view === "edit"),
-  );
 
   const projects = projectsQuery.data ?? [];
   const currentProject = projects.find((project) => project.id === status.projectId);
   const environments = currentProject?.environments ?? [];
   const folders = useMemo(() => foldersQuery.data ?? [], [foldersQuery.data]);
   const secrets = useMemo(() => secretsQuery.data ?? [], [secretsQuery.data]);
+
+  const selectedIdentity = selection ? secretIdentity(selection) : null;
+  const selectedSecret = useMemo(() => {
+    if (!selection) return null;
+    return secrets.find((secret) => secretIdentity(secret) === selectedIdentity) ?? selection;
+  }, [secrets, selection, selectedIdentity]);
+  const selectedScope = selectedSecret ? scopeForSecret(selectedSecret) : null;
+  const detailQuery = useSecretDetail(
+    selectedScope,
+    selectedSecret?.key ?? null,
+    Boolean(selectedSecret) && (revealed || view === "edit"),
+  );
 
   const filteredFolders = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -106,10 +119,6 @@ export function Workspace({
       ),
     );
   }, [secrets, search]);
-
-  const selectedSecret = selectedKey
-    ? (secrets.find((secret) => secret.key === selectedKey) ?? null)
-    : null;
 
   const secretsError =
     secretsQuery.error instanceof Error
@@ -131,7 +140,7 @@ export function Workspace({
   // biome-ignore lint/correctness/useExhaustiveDependencies: reset concealment when the selection changes.
   useEffect(() => {
     setRevealed(false);
-  }, [selectedKey]);
+  }, [selectedIdentity]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: reset read-only and inline reveals when the scope changes.
   useEffect(() => {
@@ -159,7 +168,7 @@ export function Workspace({
       if (event.key === "Escape") {
         if (view === "detail" || view === "create" || view === "edit" || view === "settings") {
           setView("list");
-          setSelectedKey(null);
+          setSelection(null);
           setRevealed(false);
         }
         return;
@@ -213,7 +222,7 @@ export function Workspace({
     setPathError(undefined);
     try {
       await setScope.mutateAsync(next);
-      setSelectedKey(null);
+      setSelection(null);
       setRevealed(false);
       setInlineSecrets({});
       setView("list");
@@ -253,7 +262,7 @@ export function Workspace({
 
   function openCreate() {
     if (!canWrite) return;
-    setSelectedKey(null);
+    setSelection(null);
     setRevealed(false);
     setView("create");
   }
@@ -265,19 +274,20 @@ export function Workspace({
   }
 
   function selectSecret(secret: SecretSummary) {
-    setSelectedKey(secret.key);
+    setSelection(secret);
     setView("detail");
     setRevealed(false);
   }
 
   async function fetchSecretValue(secret: SecretSummary): Promise<SecretDetail> {
-    if (!scope) throw new Error("Choose a scope first.");
+    const targetScope = scopeForSecret(secret);
+    if (!targetScope) throw new Error("Choose a scope first.");
     return queryClient.fetchQuery({
-      queryKey: queryKeys.secret(scope, secret.key),
+      queryKey: queryKeys.secret(targetScope, secret.key),
       queryFn: () =>
         rpc<SecretDetail>({
           type: "secrets.get",
-          payload: { scope, name: secret.key },
+          payload: { scope: targetScope, name: secret.key },
         }),
       staleTime: Number.POSITIVE_INFINITY,
       gcTime: 0,
@@ -285,19 +295,20 @@ export function Workspace({
   }
 
   async function toggleInlineReveal(secret: SecretSummary) {
-    if (inlineSecrets[secret.key] !== undefined) {
+    const id = secretIdentity(secret);
+    if (inlineSecrets[id] !== undefined) {
       setInlineSecrets((current) => {
         const next = { ...current };
-        delete next[secret.key];
+        delete next[id];
         return next;
       });
       return;
     }
 
-    setRevealingKey(secret.key);
+    setRevealingKey(id);
     try {
       const detail = await fetchSecretValue(secret);
-      setInlineSecrets((current) => ({ ...current, [secret.key]: detail.value }));
+      setInlineSecrets((current) => ({ ...current, [id]: detail.value }));
     } catch (error) {
       showToast(errorMessage(error), "danger");
     } finally {
@@ -308,7 +319,8 @@ export function Workspace({
   async function copySecret(secret: SecretSummary) {
     if (!scope) return;
     try {
-      const value = inlineSecrets[secret.key] ?? (await fetchSecretValue(secret)).value;
+      const id = secretIdentity(secret);
+      const value = inlineSecrets[id] ?? (await fetchSecretValue(secret)).value;
       await copyText(value);
       showToast(`Copied ${secret.key}`);
     } catch (error) {
@@ -334,15 +346,16 @@ export function Workspace({
     try {
       const details = await rpc<SecretDetail[]>({
         type: "secrets.listValues",
-        payload: { scope },
+        payload: { scope, recursive: searchActive },
       });
-      const visibleKeys = new Set(filteredSecrets.map((secret) => secret.key));
+      const visibleIds = new Set(filteredSecrets.map(secretIdentity));
       const next: Record<string, string> = {};
       for (const detail of details) {
-        if (visibleKeys.has(detail.key)) next[detail.key] = detail.value;
+        const id = secretIdentity(detail);
+        if (visibleIds.has(id)) next[id] = detail.value;
       }
       setInlineSecrets(next);
-      if (selectedKey) setRevealed(true);
+      if (selectedIdentity) setRevealed(true);
       const count = Object.keys(next).length;
       showToast(`Revealed ${count} secret${count === 1 ? "" : "s"}`);
     } catch (error) {
@@ -355,7 +368,7 @@ export function Workspace({
   function handleSaved(result: MutationResult) {
     setInlineSecrets({});
     if (result.status === "saved") {
-      setSelectedKey(result.secret.key);
+      setSelection(result.secret);
       setRevealed(false);
       setView("detail");
       showToast(`Saved ${result.secret.key}`);
@@ -367,7 +380,7 @@ export function Workspace({
 
   function handleDeleted(result: MutationResult, key: string) {
     setDeleteOpen(false);
-    setSelectedKey(null);
+    setSelection(null);
     setRevealed(false);
     setInlineSecrets({});
     setView("list");
@@ -376,7 +389,7 @@ export function Workspace({
 
   function closePane() {
     setView("list");
-    setSelectedKey(null);
+    setSelection(null);
     setRevealed(false);
   }
 
@@ -404,7 +417,7 @@ export function Workspace({
         onNew={openCreate}
         onSettings={() => {
           setView("settings");
-          setSelectedKey(null);
+          setSelection(null);
         }}
         onRefresh={() => {
           void secretsQuery.refetch();
@@ -413,8 +426,11 @@ export function Workspace({
         onToggleRevealAll={() => void toggleAllReveals()}
         allRevealed={anyRevealed}
         revealingAll={revealingAll}
+        revealAllDisabled={secretsQuery.isLoading || foldersQuery.isLoading}
         onOpenInfisical={() =>
-          void openInfisicalDashboard(infisicalProjectUrl(status.baseUrl, currentProject))
+          void openInfisicalDashboard(
+            infisicalProjectUrl(status.baseUrl, currentProject, status.secretPath),
+          )
         }
         search={search}
         onSearchChange={setSearch}
@@ -458,7 +474,7 @@ export function Workspace({
             <SecretList
               folders={filteredFolders}
               secrets={filteredSecrets}
-              selectedKey={selectedKey}
+              selectedId={selectedIdentity}
               onSelect={selectSecret}
               onOpenFolder={(folder) => void openFolder(folder)}
               onCopy={(secret) => void copySecret(secret)}
@@ -473,7 +489,7 @@ export function Workspace({
                 void foldersQuery.refetch();
               }}
               onNew={openCreate}
-              hasSearch={search.trim().length > 0}
+              hasSearch={searchActive}
               onClearSearch={() => setSearch("")}
               canWrite={canWrite}
             />
@@ -481,10 +497,10 @@ export function Workspace({
 
           {paneOpen ? (
             <aside className="flex min-h-0 flex-1 flex-col border-line bg-surface min-[700px]:w-[340px] min-[700px]:flex-none min-[700px]:border-l">
-              {(view === "detail" || view === "edit") && selectedSecret ? (
+              {(view === "detail" || view === "edit") && selectedSecret && selectedScope ? (
                 <SecretInspector
                   secret={selectedSecret}
-                  scope={scope}
+                  scope={selectedScope}
                   detail={detailQuery.data}
                   detailLoading={detailQuery.isFetching && !detailQuery.data}
                   detailError={
@@ -529,12 +545,12 @@ export function Workspace({
         </div>
       )}
 
-      {deleteOpen && selectedSecret ? (
+      {deleteOpen && selectedSecret && selectedScope ? (
         <DeleteSecretDialog
           open={deleteOpen}
           onOpenChange={setDeleteOpen}
           secret={selectedSecret}
-          scope={scope}
+          scope={selectedScope}
           projectName={currentProject?.name}
           environment={status.environment ?? ""}
           onDeleted={(result) => handleDeleted(result, selectedSecret.key)}

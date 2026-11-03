@@ -218,13 +218,13 @@ try {
 
   const popup = await context.newPage();
   track(popup);
-  await popup.setViewportSize({ width: 380, height: 560 });
+  await popup.setViewportSize({ width: 456, height: 600 });
   await popup.goto(`chrome-extension://${extensionId}/popup.html`);
   await popup.getByLabel("Filter secrets").waitFor({ timeout: 30_000 });
   await popup.getByRole("button", { name: "Open side panel" }).waitFor();
   await popup.waitForTimeout(800);
   await waitForSettled(popup);
-  await popup.screenshot({ path: join(reviewDir, "popup-380.png"), fullPage: true });
+  await popup.screenshot({ path: join(reviewDir, "popup-456.png"), fullPage: true });
 
   if (consoleErrors.length > 0) {
     throw new Error(`Console errors:\n${consoleErrors.join("\n")}`);

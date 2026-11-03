@@ -103,14 +103,37 @@ describe("background RPC dispatcher", () => {
 
     const result = await handleMessage({
       type: "folders.list",
-      payload: { scope },
+      payload: { scope, recursive: false },
     } satisfies RpcRequest);
 
     expect(result).toEqual({
       ok: true,
       data: [{ id: "folder-1", name: "LMS-BACKEND", path: "/LMS-BACKEND" }],
     });
-    expect(listFolders).toHaveBeenCalledWith("https://us.infisical.com", "token", scope);
+    expect(listFolders).toHaveBeenCalledWith("https://us.infisical.com", "token", scope, false);
+  });
+
+  it("forwards recursive search to the folder and secret lists", async () => {
+    vi.mocked(listFolders).mockResolvedValue([]);
+    vi.mocked(listSecrets).mockResolvedValue([]);
+    vi.mocked(listSecretValues).mockResolvedValue([]);
+
+    await handleMessage({
+      type: "folders.list",
+      payload: { scope, recursive: true },
+    } satisfies RpcRequest);
+    await handleMessage({
+      type: "secrets.list",
+      payload: { scope, recursive: true },
+    } satisfies RpcRequest);
+    await handleMessage({
+      type: "secrets.listValues",
+      payload: { scope, recursive: true },
+    } satisfies RpcRequest);
+
+    expect(listFolders).toHaveBeenCalledWith("https://us.infisical.com", "token", scope, true);
+    expect(listSecrets).toHaveBeenCalledWith("https://us.infisical.com", "token", scope, true);
+    expect(listSecretValues).toHaveBeenCalledWith("https://us.infisical.com", "token", scope, true);
   });
 
   it("lists values for an explicit reveal-all request", async () => {
@@ -128,11 +151,16 @@ describe("background RPC dispatcher", () => {
 
     const result = await handleMessage({
       type: "secrets.listValues",
-      payload: { scope },
+      payload: { scope, recursive: false },
     } satisfies RpcRequest);
 
     expect(result.ok).toBe(true);
-    expect(listSecretValues).toHaveBeenCalledWith("https://us.infisical.com", "token", scope);
+    expect(listSecretValues).toHaveBeenCalledWith(
+      "https://us.infisical.com",
+      "token",
+      scope,
+      false,
+    );
   });
 
   it("lists secrets without exposing values", async () => {
@@ -149,11 +177,11 @@ describe("background RPC dispatcher", () => {
 
     const result = await handleMessage({
       type: "secrets.list",
-      payload: { scope },
+      payload: { scope, recursive: false },
     } satisfies RpcRequest);
 
     expect(result.ok).toBe(true);
-    expect(listSecrets).toHaveBeenCalledWith("https://us.infisical.com", "token", scope);
+    expect(listSecrets).toHaveBeenCalledWith("https://us.infisical.com", "token", scope, false);
   });
 
   it("records a recent key after revealing one secret", async () => {

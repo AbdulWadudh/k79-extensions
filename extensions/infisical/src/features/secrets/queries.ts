@@ -4,11 +4,14 @@ import { queryKeys } from "@/lib/query-keys";
 import { rpc } from "@/messaging/client";
 import type { SecretInput, SecretUpdateInput } from "@/messaging/protocol";
 
-export function useSecrets(scope: SecretScope | null) {
+export function useSecrets(scope: SecretScope | null, recursive = false) {
   return useQuery({
-    queryKey: scope ? queryKeys.secrets(scope) : ["secrets", "none"],
+    queryKey: scope ? queryKeys.secrets(scope, recursive) : ["secrets", "none"],
     queryFn: () =>
-      rpc<SecretSummary[]>({ type: "secrets.list", payload: { scope: scope as SecretScope } }),
+      rpc<SecretSummary[]>({
+        type: "secrets.list",
+        payload: { scope: scope as SecretScope, recursive },
+      }),
     enabled: scope !== null,
   });
 }
@@ -36,7 +39,7 @@ export function useCreateSecret(scope: SecretScope | null) {
       return rpc<MutationResult>({ type: "secrets.create", payload: { scope, input } });
     },
     onSuccess: () => {
-      if (scope) void queryClient.invalidateQueries({ queryKey: queryKeys.secrets(scope) });
+      if (scope) void queryClient.invalidateQueries({ queryKey: queryKeys.secretScope(scope) });
     },
   });
 }
@@ -51,9 +54,9 @@ export function useUpdateSecret(scope: SecretScope | null, name: string) {
     },
     onSuccess: () => {
       if (scope) {
-        void queryClient.invalidateQueries({ queryKey: queryKeys.secrets(scope) });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.secretScope(scope) });
         void queryClient.removeQueries({ queryKey: queryKeys.secret(scope, name) });
-        if (scope) void queryClient.removeQueries({ queryKey: ["secret"] });
+        void queryClient.removeQueries({ queryKey: ["secret"] });
       }
     },
   });
@@ -68,7 +71,7 @@ export function useDeleteSecret(scope: SecretScope | null) {
       return rpc<MutationResult>({ type: "secrets.delete", payload: { scope, name } });
     },
     onSuccess: () => {
-      if (scope) void queryClient.invalidateQueries({ queryKey: queryKeys.secrets(scope) });
+      if (scope) void queryClient.invalidateQueries({ queryKey: queryKeys.secretScope(scope) });
     },
   });
 }

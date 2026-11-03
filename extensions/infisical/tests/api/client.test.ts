@@ -95,6 +95,26 @@ describe("Infisical client", () => {
     expect(url.searchParams.get("recursive")).toBe("false");
   });
 
+  it("asks for descendant folders when searching", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse({
+        folders: [{ id: "folder-2", name: "worker", relativePath: "/LMS-BACKEND/worker" }],
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const folders = await listFolders(
+      "https://us.infisical.com",
+      "token",
+      { projectId: "project-1", environment: "dev", secretPath: "/LMS-BACKEND" },
+      true,
+    );
+
+    expect(folders).toEqual([{ id: "folder-2", name: "worker", path: "/LMS-BACKEND/worker" }]);
+    const [url] = fetchMock.mock.calls[0] as [URL];
+    expect(url.searchParams.get("recursive")).toBe("true");
+  });
+
   it("lists secrets without requesting values", async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       jsonResponse({
@@ -171,6 +191,48 @@ describe("Infisical client", () => {
     ]);
     const [url] = fetchMock.mock.calls[0] as [URL];
     expect(url.searchParams.get("viewSecretValue")).toBe("true");
+    expect(url.searchParams.get("recursive")).toBe("false");
+  });
+
+  it("lists descendant secrets and values when searching", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        jsonResponse({
+          secrets: [
+            {
+              id: "secret-1",
+              secretKey: "KEY",
+              secretComment: "",
+              version: 1,
+              secretPath: "/LMS-BACKEND",
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          secrets: [
+            {
+              id: "secret-1",
+              secretKey: "KEY",
+              secretValue: "synthetic-value",
+              secretComment: "",
+              version: 1,
+              secretPath: "/LMS-BACKEND",
+            },
+          ],
+        }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    const scope = { projectId: "project-1", environment: "dev", secretPath: "/" };
+
+    await listSecrets("https://us.infisical.com", "token", scope, true);
+    await listSecretValues("https://us.infisical.com", "token", scope, true);
+
+    for (const [url] of fetchMock.mock.calls as Array<[URL]>) {
+      expect(url.searchParams.get("recursive")).toBe("true");
+    }
   });
 
   it("maps a 401 response to an unauthorized error", async () => {
