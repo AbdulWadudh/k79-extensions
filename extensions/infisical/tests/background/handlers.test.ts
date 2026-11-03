@@ -21,12 +21,20 @@ vi.mock("@/api/client", () => ({
   createSecret: vi.fn(),
   deleteSecret: vi.fn(),
   getSecret: vi.fn(),
+  listFolders: vi.fn(),
   listProjects: vi.fn(),
   listSecrets: vi.fn(),
   updateSecret: vi.fn(),
 }));
 
-import { createSecret, deleteSecret, listProjects, listSecrets, updateSecret } from "@/api/client";
+import {
+  createSecret,
+  deleteSecret,
+  listFolders,
+  listProjects,
+  listSecrets,
+  updateSecret,
+} from "@/api/client";
 import {
   connect,
   disconnect,
@@ -84,6 +92,23 @@ describe("background RPC dispatcher", () => {
   it("returns connection status", async () => {
     const result = await handleMessage({ type: "connection.status" } satisfies RpcRequest);
     expect(result).toEqual({ ok: true, data: status });
+  });
+
+  it("lists folders for the current scope", async () => {
+    vi.mocked(listFolders).mockResolvedValue([
+      { id: "folder-1", name: "LMS-BACKEND", path: "/LMS-BACKEND" },
+    ]);
+
+    const result = await handleMessage({
+      type: "folders.list",
+      payload: { scope },
+    } satisfies RpcRequest);
+
+    expect(result).toEqual({
+      ok: true,
+      data: [{ id: "folder-1", name: "LMS-BACKEND", path: "/LMS-BACKEND" }],
+    });
+    expect(listFolders).toHaveBeenCalledWith("https://us.infisical.com", "token", scope);
   });
 
   it("lists secrets without exposing values", async () => {

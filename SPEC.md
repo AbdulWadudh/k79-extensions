@@ -50,7 +50,7 @@ Success is not “a CRUD form that works.” Success is a tool that a developer 
 - Authenticate with Universal Auth: Machine Identity Client ID + Client Secret.
 - Choose a project and environment.
 - Fall back to a manual project ID and environment slug when listing projects/environments is forbidden.
-- Work within a folder path, with recent paths.
+- Work within a folder path, with recent paths and navigable folder rows.
 - List shared secrets with values hidden by default.
 - Search locally by key, path, and comment.
 - Reveal and copy a secret value on demand.
@@ -141,6 +141,7 @@ The editor is **not a centered modal**. On wide layouts it replaces the inspecto
 
 Each row shows:
 
+- Folder rows above secrets: folder icon, name, full path, and a navigation chevron. Clicking opens that folder.
 - Secret key in monospace with tabular figures.
 - Masked value: a fixed-width mask that does **not** reveal value length.
 - Folder path (when not at root), muted.

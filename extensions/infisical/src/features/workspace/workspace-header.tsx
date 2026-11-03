@@ -187,6 +187,7 @@ export function WorkspaceHeader({
   onSearchChange,
   searchRef,
   secretCount,
+  folderCount,
   changingScope,
   refreshing,
   pathError,
@@ -208,6 +209,7 @@ export function WorkspaceHeader({
   onSearchChange: (value: string) => void;
   searchRef: RefObject<HTMLInputElement | null>;
   secretCount: number;
+  folderCount: number;
   changingScope: boolean;
   refreshing: boolean;
   pathError?: string;
@@ -305,8 +307,9 @@ export function WorkspaceHeader({
             <Icon icon={SidebarRight01Icon} size={14} />
           </IconButton>
         ) : null}
-        <span className="shrink-0 font-mono text-[10px] tabular-nums text-muted">
+        <span className="shrink-0 whitespace-nowrap font-mono text-[9px] tabular-nums text-muted min-[400px]:text-[10px]">
           {secretCount} {secretCount === 1 ? "key" : "keys"}
+          {folderCount > 0 ? ` · ${folderCount} ${folderCount === 1 ? "folder" : "folders"}` : ""}
         </span>
       </div>
 

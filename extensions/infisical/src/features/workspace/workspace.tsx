@@ -2,10 +2,17 @@ import { AlertCircleIcon, CheckIcon } from "@hugeicons/core-free-icons";
 import { cn } from "@k79/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { MutationResult, SecretDetail, SecretScope, SecretSummary } from "@/api/types";
+import type {
+  FolderSummary,
+  MutationResult,
+  SecretDetail,
+  SecretScope,
+  SecretSummary,
+} from "@/api/types";
 import { ErrorBanner } from "@/components/error-banner";
 import { Icon } from "@/components/icon";
 import { useProjects, useSetScope } from "@/features/connection/queries";
+import { useFolders } from "@/features/folders/queries";
 import { DeleteSecretDialog } from "@/features/secrets/delete-secret-dialog";
 import { useSecretDetail, useSecrets } from "@/features/secrets/queries";
 import { SecretEditor } from "@/features/secrets/secret-editor";
@@ -67,6 +74,7 @@ export function Workspace({
       : null;
 
   const projectsQuery = useProjects(true);
+  const foldersQuery = useFolders(scope);
   const secretsQuery = useSecrets(scope);
   const setScope = useSetScope();
   const detailQuery = useSecretDetail(
@@ -78,7 +86,16 @@ export function Workspace({
   const projects = projectsQuery.data ?? [];
   const currentProject = projects.find((project) => project.id === status.projectId);
   const environments = currentProject?.environments ?? [];
+  const folders = useMemo(() => foldersQuery.data ?? [], [foldersQuery.data]);
   const secrets = useMemo(() => secretsQuery.data ?? [], [secretsQuery.data]);
+
+  const filteredFolders = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return folders;
+    return folders.filter((folder) =>
+      [folder.name, folder.path].some((value) => value.toLowerCase().includes(query)),
+    );
+  }, [folders, search]);
 
   const filteredSecrets = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -99,6 +116,12 @@ export function Workspace({
       ? secretsQuery.error
       : secretsQuery.error
         ? new Error("Could not load secrets.")
+        : null;
+  const foldersError =
+    foldersQuery.error instanceof Error
+      ? foldersQuery.error
+      : foldersQuery.error
+        ? new Error("Could not load folders.")
         : null;
 
   const paneOpen = view === "detail" || view === "create" || view === "edit";
@@ -229,6 +252,10 @@ export function Workspace({
     await changeScope({ ...scope, secretPath: path });
   }
 
+  async function openFolder(folder: FolderSummary) {
+    await handlePathChange(folder.path);
+  }
+
   function openCreate() {
     if (!canWrite) return;
     setSelectedKey(null);
@@ -356,14 +383,21 @@ export function Workspace({
           setView("settings");
           setSelectedKey(null);
         }}
-        onRefresh={() => void secretsQuery.refetch()}
+        onRefresh={() => {
+          void secretsQuery.refetch();
+          void foldersQuery.refetch();
+        }}
         onConceal={concealAll}
         search={search}
         onSearchChange={setSearch}
         searchRef={searchRef}
         secretCount={filteredSecrets.length}
+        folderCount={filteredFolders.length}
         changingScope={setScope.isPending}
-        refreshing={secretsQuery.isFetching && !secretsQuery.isLoading}
+        refreshing={
+          (secretsQuery.isFetching && !secretsQuery.isLoading) ||
+          (foldersQuery.isFetching && !foldersQuery.isLoading)
+        }
         pathError={pathError}
         canWrite={canWrite}
         onOpenSidePanel={onOpenSidePanel}
@@ -394,17 +428,23 @@ export function Workspace({
             )}
           >
             <SecretList
+              folders={filteredFolders}
               secrets={filteredSecrets}
               selectedKey={selectedKey}
               onSelect={selectSecret}
+              onOpenFolder={(folder) => void openFolder(folder)}
               onCopy={(secret) => void copySecret(secret)}
               onToggleReveal={(secret) => void toggleInlineReveal(secret)}
               revealedValues={inlineSecrets}
               revealingKey={revealingKey}
               copiedKey={copiedKey}
-              loading={secretsQuery.isLoading}
+              loading={secretsQuery.isLoading || foldersQuery.isLoading}
               error={secretsError}
-              onRetry={() => void secretsQuery.refetch()}
+              foldersError={foldersError}
+              onRetry={() => {
+                void secretsQuery.refetch();
+                void foldersQuery.refetch();
+              }}
               onNew={openCreate}
               hasSearch={search.trim().length > 0}
               onClearSearch={() => setSearch("")}

@@ -44,6 +44,7 @@ export function useSetScope() {
       rpc<ConnectionStatus>({ type: "scope.set", payload: { scope } }),
     onSuccess: (status, scope) => {
       queryClient.setQueryData(queryKeys.status, status);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.folders(scope) });
       void queryClient.invalidateQueries({ queryKey: queryKeys.secrets(scope) });
     },
   });

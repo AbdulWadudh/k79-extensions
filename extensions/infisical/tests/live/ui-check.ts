@@ -120,6 +120,19 @@ try {
   await page.screenshot({ path: join(reviewDir, "workspace-400.png"), fullPage: true });
   await assertNoBlockingA11y(page, "workspace");
 
+  const folderRow = page.locator("li").filter({ hasText: "LMS-BACKEND" }).first();
+  const hasFolder = await folderRow
+    .waitFor({ state: "visible", timeout: 5_000 })
+    .then(() => true)
+    .catch(() => false);
+  if (hasFolder) {
+    await folderRow.getByRole("button").first().click();
+    await page.getByTitle("Change folder path").getByText("/LMS-BACKEND").waitFor();
+    await page.getByRole("button", { name: "Go up one folder" }).click();
+    await page.getByTitle("Change folder path").getByText("/", { exact: true }).waitFor();
+    console.log("folder_navigation=passed");
+  }
+
   const readOnly = await page.getByText(/cannot create, edit, or delete/).isVisible();
   if (readOnly) {
     console.log("read_only_identity=true");

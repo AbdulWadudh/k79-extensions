@@ -2,6 +2,8 @@ import { createApiError, InfisicalError, normalizeThrownError } from "./errors";
 import {
   approvalResponseSchema,
   authResponseSchema,
+  type FolderSummary,
+  folderListResponseSchema,
   type MutationResult,
   type Project,
   projectListResponseSchema,
@@ -10,6 +12,7 @@ import {
   type SecretSummary,
   secretListResponseSchema,
   secretResponseSchema,
+  toFolderSummary,
   toSecretDetail,
   toSecretSummary,
 } from "./types";
@@ -125,6 +128,26 @@ export async function listProjects(baseUrl: string, token: string): Promise<Proj
   });
 
   return projectListResponseSchema.parse(response).projects;
+}
+
+export async function listFolders(
+  baseUrl: string,
+  token: string,
+  scope: SecretScope,
+): Promise<FolderSummary[]> {
+  const response = await requestJson(baseUrl, "/api/v2/folders", {
+    token,
+    query: {
+      projectId: scope.projectId,
+      environment: scope.environment,
+      path: scope.secretPath,
+      recursive: "false",
+    },
+  });
+
+  return folderListResponseSchema
+    .parse(response)
+    .folders.map((folder) => toFolderSummary(folder, scope.secretPath));
 }
 
 export async function listSecrets(

@@ -80,6 +80,13 @@ All Infisical tests live under `extensions/infisical/tests/`:
 
 `bun run test:e2e` builds the extension, launches a visible Chromium window, loads the unpacked extension, checks onboarding and popup, and runs axe.
 
+## Use it
+
+- Folders render as rows above secrets. Click a folder to enter it; use the up control in the path bar to return.
+- Click a row to open the inspector. The eye action reveals the value inline without opening the card.
+- Edit and Delete sit inline beneath the key in the inspector.
+- The popup runs the full console. The panel icon in its path row opens the same session in the side panel.
+
 ## Live testing
 
 Real credentials are local-only. The repo ignores `.env`; use `.env.example` as the shape.
@@ -114,7 +121,7 @@ k79-extensions/
 │  ├─ src/entrypoints/       # background, side panel, popup
 │  ├─ src/api/               # Infisical DTOs, client, errors
 │  ├─ src/background/        # auth, storage, message handlers
-│  ├─ src/features/          # connection, secrets, workspace, settings, popup
+│  ├─ src/features/          # connection, folders, secrets, workspace, settings
 │  ├─ src/lib/               # query keys, paths, format, permissions, theme
 │  ├─ src/styles/            # extension CSS entry
 │  └─ tests/                 # unit, e2e, and live tests for this extension

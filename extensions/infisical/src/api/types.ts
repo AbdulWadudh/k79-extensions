@@ -47,6 +47,16 @@ export const projectListResponseSchema = z.object({
   projects: z.array(projectSchema).default([]),
 });
 
+export const folderDtoSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  relativePath: z.string().optional(),
+});
+
+export const folderListResponseSchema = z.object({
+  folders: z.array(folderDtoSchema).default([]),
+});
+
 export const secretDtoSchema = z.object({
   id: z.string(),
   secretKey: z.string(),
@@ -89,7 +99,14 @@ export const authResponseSchema = z.object({
 
 export type Environment = z.infer<typeof environmentSchema>;
 export type Project = z.infer<typeof projectSchema>;
+export type FolderDto = z.infer<typeof folderDtoSchema>;
 export type SecretDto = z.infer<typeof secretDtoSchema>;
+
+export type FolderSummary = {
+  id: string;
+  name: string;
+  path: string;
+};
 
 export type SecretSummary = {
   id: string;
@@ -108,6 +125,17 @@ export type SecretDetail = SecretSummary & {
 export type MutationResult =
   | { status: "saved"; secret: SecretDetail }
   | { status: "pending"; message: string };
+
+export function toFolderSummary(dto: FolderDto, basePath: string): FolderSummary {
+  const candidate = dto.relativePath?.trim()
+    ? dto.relativePath
+    : `${basePath}/${dto.name}`.replace(/\/+/g, "/");
+  return {
+    id: dto.id,
+    name: dto.name,
+    path: tryNormalizeSecretPath(candidate) ?? `${basePath}/${dto.name}`.replace(/\/+/g, "/"),
+  };
+}
 
 export function toSecretSummary(dto: SecretDto): SecretSummary {
   return {

@@ -2,6 +2,7 @@ import {
   createSecret,
   deleteSecret,
   getSecret,
+  listFolders,
   listProjects,
   listSecrets,
   updateSecret,
@@ -56,6 +57,11 @@ async function dispatch(request: RpcRequest): Promise<unknown> {
     case "prefs.setTheme": {
       await savePrefs({ theme: request.payload.theme });
       return getConnectionStatus();
+    }
+
+    case "folders.list": {
+      const prefs = await getPrefs();
+      return withAuthRetry((token) => listFolders(prefs.baseUrl, token, request.payload.scope));
     }
 
     case "secrets.list": {

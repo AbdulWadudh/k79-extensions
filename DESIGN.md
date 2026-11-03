@@ -201,6 +201,11 @@ The environment rail uses full-height rectangular tabs, not rounded pills. Secre
 - **Focus:** bottle-green border plus a soft 2px ring. Error: vermilion border and a text error directly below the control.
 - **Labels:** 11px uppercase tracking, with helper text in muted sage. Do not use placeholder text as the label.
 
+### Folder Rows
+
+- **Structure:** folder icon in the warm warning tone, folder name in monospace, full path in muted metadata, and a chevron that nudges right on hover.
+- **Behavior:** clicking enters the folder; the path bar’s up control returns. Folder rows sit above secret rows and are not draggable or selectable.
+
 ### Secret Rows
 
 - **Structure:** key + version badge on the first line; fixed-width mask, path, and relative age on the second.

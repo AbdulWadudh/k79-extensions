@@ -35,6 +35,7 @@ export const rpcRequestSchema = z.discriminatedUnion("type", [
     type: z.literal("prefs.setTheme"),
     payload: z.object({ theme: themePreferenceSchema }),
   }),
+  z.object({ type: z.literal("folders.list"), payload: z.object({ scope: secretScopeSchema }) }),
   z.object({ type: z.literal("secrets.list"), payload: z.object({ scope: secretScopeSchema }) }),
   z.object({
     type: z.literal("secrets.get"),

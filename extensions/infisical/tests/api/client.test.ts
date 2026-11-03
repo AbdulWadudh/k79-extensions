@@ -3,6 +3,7 @@ import {
   createSecret,
   deleteSecret,
   getSecret,
+  listFolders,
   listProjects,
   listSecrets,
   loginUniversalAuth,
@@ -70,6 +71,27 @@ describe("Infisical client", () => {
     expect(init.body).toBe(
       JSON.stringify({ clientId: "client-id", clientSecret: "client-secret" }),
     );
+  });
+
+  it("lists folders for the current path", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse({
+        folders: [{ id: "folder-1", name: "LMS-BACKEND", relativePath: "/LMS-BACKEND" }],
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const folders = await listFolders("https://us.infisical.com", "token", {
+      projectId: "project-1",
+      environment: "dev",
+      secretPath: "/",
+    });
+
+    expect(folders).toEqual([{ id: "folder-1", name: "LMS-BACKEND", path: "/LMS-BACKEND" }]);
+    const [url] = fetchMock.mock.calls[0] as [URL];
+    expect(url.pathname).toBe("/api/v2/folders");
+    expect(url.searchParams.get("path")).toBe("/");
+    expect(url.searchParams.get("recursive")).toBe("false");
   });
 
   it("lists secrets without requesting values", async () => {

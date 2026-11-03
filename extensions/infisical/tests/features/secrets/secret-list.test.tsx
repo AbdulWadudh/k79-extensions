@@ -18,9 +18,11 @@ const secret: SecretSummary = {
 function renderList(overrides: Partial<ComponentProps<typeof SecretList>> = {}) {
   return render(
     <SecretList
+      folders={[]}
       secrets={[secret]}
       selectedKey={null}
       onSelect={vi.fn()}
+      onOpenFolder={vi.fn()}
       onCopy={vi.fn()}
       onToggleReveal={vi.fn()}
       revealedValues={{}}
@@ -28,6 +30,7 @@ function renderList(overrides: Partial<ComponentProps<typeof SecretList>> = {}) 
       copiedKey={null}
       loading={false}
       error={null}
+      foldersError={null}
       onRetry={vi.fn()}
       onNew={vi.fn()}
       hasSearch={false}
@@ -59,10 +62,23 @@ describe("SecretList", () => {
     expect(onCopy).toHaveBeenCalledWith(secret);
   });
 
-  it("teaches the empty state when the folder has no secrets", () => {
-    renderList({ secrets: [], canWrite: true });
+  it("teaches the empty state when the folder has no folders or secrets", () => {
+    renderList({ folders: [], secrets: [], canWrite: true });
     expect(screen.getByText("No secrets in this folder")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "New secret" })).toBeInTheDocument();
+  });
+
+  it("renders folder rows and opens them", async () => {
+    const user = userEvent.setup();
+    const onOpenFolder = vi.fn();
+    const folder = { id: "folder-1", name: "LMS-BACKEND", path: "/LMS-BACKEND" };
+
+    renderList({ folders: [folder], secrets: [], onOpenFolder });
+    expect(screen.getByText("LMS-BACKEND")).toBeInTheDocument();
+    expect(screen.queryByText("No secrets in this folder")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /LMS-BACKEND/ }));
+    expect(onOpenFolder).toHaveBeenCalledWith(folder);
   });
 
   it("toggles an inline reveal without selecting the row", async () => {

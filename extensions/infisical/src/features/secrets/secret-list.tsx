@@ -1,14 +1,16 @@
 import {
+  ArrowRight01Icon,
   Copy01Icon,
   CopyCheckIcon,
   EyeIcon,
+  Folder01Icon,
   Key01Icon,
   Search01Icon,
   ViewOffSlashIcon,
 } from "@hugeicons/core-free-icons";
 import { Badge, Button, cn, EmptyState, IconButton, Skeleton, Spinner } from "@k79/ui";
 import { type KeyboardEvent, useRef } from "react";
-import type { SecretSummary } from "@/api/types";
+import type { FolderSummary, SecretSummary } from "@/api/types";
 import { ErrorBanner } from "@/components/error-banner";
 import { Icon } from "@/components/icon";
 import { formatRelativeTime } from "@/lib/format";
@@ -16,9 +18,11 @@ import { formatRelativeTime } from "@/lib/format";
 const MASK = "••••••••••••";
 
 export function SecretList({
+  folders,
   secrets,
   selectedKey,
   onSelect,
+  onOpenFolder,
   onCopy,
   onToggleReveal,
   revealedValues,
@@ -26,15 +30,18 @@ export function SecretList({
   copiedKey,
   loading,
   error,
+  foldersError,
   onRetry,
   onNew,
   hasSearch,
   onClearSearch,
   canWrite,
 }: {
+  folders: FolderSummary[];
   secrets: SecretSummary[];
   selectedKey: string | null;
   onSelect: (secret: SecretSummary) => void;
+  onOpenFolder: (folder: FolderSummary) => void;
   onCopy: (secret: SecretSummary) => void;
   onToggleReveal: (secret: SecretSummary) => void;
   revealedValues: Record<string, string>;
@@ -42,6 +49,7 @@ export function SecretList({
   copiedKey: string | null;
   loading: boolean;
   error: Error | null;
+  foldersError: Error | null;
   onRetry: () => void;
   onNew: () => void;
   hasSearch: boolean;
@@ -106,7 +114,7 @@ export function SecretList({
     );
   }
 
-  if (secrets.length === 0) {
+  if (folders.length === 0 && secrets.length === 0) {
     return hasSearch ? (
       <EmptyState
         icon={<Icon icon={Search01Icon} size={18} />}
@@ -139,109 +147,143 @@ export function SecretList({
   }
 
   return (
-    <ul className="m-0 min-h-0 flex-1 list-none overflow-y-auto p-0" aria-label="Secrets">
-      {secrets.map((secret) => {
-        const selected = secret.key === selectedKey;
-        const copied = secret.key === copiedKey;
-        const revealedValue = revealedValues[secret.key];
-        const isRevealed = revealedValue !== undefined;
-        const isRevealing = revealingKey === secret.key;
-        return (
-          <li
-            key={`${secret.path}:${secret.key}`}
-            className={cn(
-              "group flex items-stretch border-b border-line transition-colors",
-              selected
-                ? "border-l border-l-accent bg-accent-soft/55"
-                : "border-l border-l-transparent hover:bg-surface-muted/60",
-            )}
-          >
+    <div className="min-h-0 flex-1 overflow-y-auto">
+      {foldersError ? (
+        <div
+          role="status"
+          className="border-b border-warning/30 bg-warning-soft px-3 py-2 text-[11px] leading-4 text-warning"
+        >
+          Folders could not be loaded. {foldersError.message}
+        </div>
+      ) : null}
+      <ul className="m-0 list-none p-0" aria-label="Folders and secrets">
+        {folders.map((folder) => (
+          <li key={folder.id} className="border-b border-line">
             <button
-              ref={(node) => {
-                if (node) rowRefs.current.set(secret.key, node);
-                else rowRefs.current.delete(secret.key);
-              }}
               type="button"
-              onClick={() => onSelect(secret)}
-              onKeyDown={(event) => onRowKeyDown(event, secret)}
-              aria-current={selected ? "true" : undefined}
-              className="flex min-w-0 flex-1 items-center gap-2.5 px-3 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus"
+              onClick={() => onOpenFolder(folder)}
+              className="group flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors hover:bg-surface-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus"
             >
-              <Icon
-                icon={Key01Icon}
-                size={14}
-                className={cn("shrink-0", selected ? "text-accent" : "text-muted")}
-              />
+              <Icon icon={Folder01Icon} size={15} className="shrink-0 text-warning" />
               <span className="min-w-0 flex-1">
-                <span className="flex min-w-0 items-center gap-1.5">
-                  <span className="truncate font-mono text-[12px] font-medium tracking-[-0.01em] text-ink">
-                    {secret.key}
-                  </span>
-                  <Badge tone={selected ? "accent" : "neutral"}>{`v${secret.version}`}</Badge>
+                <span className="block truncate font-mono text-[12px] font-medium text-ink">
+                  {folder.name}
                 </span>
-                {isRevealed ? (
-                  <span className="mt-0.5 block whitespace-pre-wrap break-all font-mono text-[11px] leading-4 text-ink">
-                    {revealedValue || "(empty value)"}
-                  </span>
-                ) : (
-                  <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[10px] text-muted">
-                    <span className="shrink-0 font-mono tracking-[0.16em]" aria-hidden="true">
-                      {MASK}
-                    </span>
-                    <span className="shrink-0" aria-hidden="true">
-                      ·
-                    </span>
-                    <span className="truncate font-mono">
-                      {secret.path === "/" ? "root" : secret.path}
-                    </span>
-                    <span className="shrink-0" aria-hidden="true">
-                      ·
-                    </span>
-                    <span className="shrink-0">{formatRelativeTime(secret.updatedAt)}</span>
-                  </span>
-                )}
-                {isRevealed ? (
-                  <span className="mt-1 flex min-w-0 items-center gap-1.5 text-[10px] text-muted">
-                    <span className="truncate font-mono">
-                      {secret.path === "/" ? "root" : secret.path}
-                    </span>
-                    <span className="shrink-0" aria-hidden="true">
-                      ·
-                    </span>
-                    <span className="shrink-0">{formatRelativeTime(secret.updatedAt)}</span>
-                  </span>
-                ) : null}
+                <span className="mt-0.5 block truncate text-[10px] text-muted">
+                  Folder · {folder.path}
+                </span>
               </span>
+              <Icon
+                icon={ArrowRight01Icon}
+                size={13}
+                className="shrink-0 text-muted transition-transform group-hover:translate-x-0.5"
+              />
             </button>
-
-            <div className="flex shrink-0 items-center gap-0.5 pr-2 opacity-100 transition-opacity min-[480px]:opacity-0 min-[480px]:group-focus-within:opacity-100 min-[480px]:group-hover:opacity-100">
-              <IconButton
-                label={copied ? "Copied" : "Copy secret value"}
-                onClick={() => onCopy(secret)}
-                className="size-7"
+          </li>
+        ))}
+        {secrets.map((secret) => {
+          const selected = secret.key === selectedKey;
+          const copied = secret.key === copiedKey;
+          const revealedValue = revealedValues[secret.key];
+          const isRevealed = revealedValue !== undefined;
+          const isRevealing = revealingKey === secret.key;
+          return (
+            <li
+              key={`${secret.path}:${secret.key}`}
+              className={cn(
+                "group flex items-stretch border-b border-line transition-colors",
+                selected
+                  ? "border-l border-l-accent bg-accent-soft/55"
+                  : "border-l border-l-transparent hover:bg-surface-muted/60",
+              )}
+            >
+              <button
+                ref={(node) => {
+                  if (node) rowRefs.current.set(secret.key, node);
+                  else rowRefs.current.delete(secret.key);
+                }}
+                type="button"
+                onClick={() => onSelect(secret)}
+                onKeyDown={(event) => onRowKeyDown(event, secret)}
+                aria-current={selected ? "true" : undefined}
+                className="flex min-w-0 flex-1 items-center gap-2.5 px-3 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus"
               >
                 <Icon
-                  icon={copied ? CopyCheckIcon : Copy01Icon}
-                  size={13}
-                  className={copied ? "text-success" : undefined}
+                  icon={Key01Icon}
+                  size={14}
+                  className={cn("shrink-0", selected ? "text-accent" : "text-muted")}
                 />
-              </IconButton>
-              <IconButton
-                label={isRevealed ? "Conceal secret value" : "Reveal secret value"}
-                onClick={() => onToggleReveal(secret)}
-                aria-pressed={isRevealed}
-                className="size-7"
-              >
-                {isRevealing ? (
-                  <Spinner className="size-3" label="Revealing value" />
-                ) : (
-                  <Icon icon={isRevealed ? ViewOffSlashIcon : EyeIcon} size={13} />
-                )}
-              </IconButton>
-            </div>
-          </li>
-        );
-      })}
-    </ul>
+                <span className="min-w-0 flex-1">
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    <span className="truncate font-mono text-[12px] font-medium tracking-[-0.01em] text-ink">
+                      {secret.key}
+                    </span>
+                    <Badge tone={selected ? "accent" : "neutral"}>{`v${secret.version}`}</Badge>
+                  </span>
+                  {isRevealed ? (
+                    <span className="mt-0.5 block whitespace-pre-wrap break-all font-mono text-[11px] leading-4 text-ink">
+                      {revealedValue || "(empty value)"}
+                    </span>
+                  ) : (
+                    <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[10px] text-muted">
+                      <span className="shrink-0 font-mono tracking-[0.16em]" aria-hidden="true">
+                        {MASK}
+                      </span>
+                      <span className="shrink-0" aria-hidden="true">
+                        ·
+                      </span>
+                      <span className="truncate font-mono">
+                        {secret.path === "/" ? "root" : secret.path}
+                      </span>
+                      <span className="shrink-0" aria-hidden="true">
+                        ·
+                      </span>
+                      <span className="shrink-0">{formatRelativeTime(secret.updatedAt)}</span>
+                    </span>
+                  )}
+                  {isRevealed ? (
+                    <span className="mt-1 flex min-w-0 items-center gap-1.5 text-[10px] text-muted">
+                      <span className="truncate font-mono">
+                        {secret.path === "/" ? "root" : secret.path}
+                      </span>
+                      <span className="shrink-0" aria-hidden="true">
+                        ·
+                      </span>
+                      <span className="shrink-0">{formatRelativeTime(secret.updatedAt)}</span>
+                    </span>
+                  ) : null}
+                </span>
+              </button>
+
+              <div className="flex shrink-0 items-center gap-0.5 pr-2 opacity-100 transition-opacity min-[480px]:opacity-0 min-[480px]:group-focus-within:opacity-100 min-[480px]:group-hover:opacity-100">
+                <IconButton
+                  label={copied ? "Copied" : "Copy secret value"}
+                  onClick={() => onCopy(secret)}
+                  className="size-7"
+                >
+                  <Icon
+                    icon={copied ? CopyCheckIcon : Copy01Icon}
+                    size={13}
+                    className={copied ? "text-success" : undefined}
+                  />
+                </IconButton>
+                <IconButton
+                  label={isRevealed ? "Conceal secret value" : "Reveal secret value"}
+                  onClick={() => onToggleReveal(secret)}
+                  aria-pressed={isRevealed}
+                  className="size-7"
+                >
+                  {isRevealing ? (
+                    <Spinner className="size-3" label="Revealing value" />
+                  ) : (
+                    <Icon icon={isRevealed ? ViewOffSlashIcon : EyeIcon} size={13} />
+                  )}
+                </IconButton>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }
