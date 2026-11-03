@@ -13,6 +13,7 @@
     "dev:infisical": "bun run --filter @k79/infisical dev",
     "build:infisical": "bun run --filter @k79/infisical build",
     "zip:infisical": "bun run --filter @k79/infisical zip",
+    "crx:infisical": "bun run --filter @k79/infisical crx",
     "build": "bun run --filter '*' build",
     "zip": "bun run --filter '*' zip",
     "check": "biome check . && bun run typecheck",

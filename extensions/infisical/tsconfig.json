@@ -7,8 +7,15 @@
       "@k79/shared": ["../../packages/shared/src/index.ts"],
       "@k79/ui": ["../../packages/ui/src/index.ts"]
     },
-    "types": ["chrome"]
+    "types": ["chrome", "node"]
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "wxt.config.ts", ".wxt/**/*.ts", ".wxt/**/*.d.ts"],
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "scripts/**/*.ts",
+    "wxt.config.ts",
+    ".wxt/**/*.ts",
+    ".wxt/**/*.d.ts"
+  ],
   "exclude": ["node_modules", ".output"]
 }

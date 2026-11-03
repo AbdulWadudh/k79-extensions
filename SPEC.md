@@ -4,7 +4,7 @@
 
 **Owner:** K79
 **Date:** 2026-11-03
-**Target:** Chrome 116+ (Manifest V3), internal/unpacked distribution first
+**Target:** Chrome 116+ (Manifest V3), internal/unpacked distribution first; signed CRX for local or managed deployment
 
 ---
 
@@ -516,6 +516,10 @@ bun run build:infisical
 bun run zip:infisical
 # → bun run --filter @k79/infisical zip
 
+# Signed CRX3 for local or managed deployment
+bun run crx:infisical
+# → wxt build + Chrome --pack-extension
+
 # All extensions
 bun run build
 bun run zip
@@ -660,6 +664,7 @@ At least 80% statements and branches for `src/api`, `src/domain`, `src/backgroun
 - [x] `bun run check` passes.
 - [x] `bun run test` passes.
 - [x] `bun run build:infisical` produces `extensions/infisical/.output/chrome-mv3`.
+- [x] `bun run crx:infisical` produces a signed CRX3 with a reusable local key.
 - [x] The unpacked build loads in Chrome 116+ with no manifest errors.
 - [x] `bun run test:e2e` passes with the real extension page and axe.
 

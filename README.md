@@ -54,12 +54,32 @@ Development with hot reload:
 bun run dev:infisical
 ```
 
+## Signed CRX
+
+```bash
+bun run crx:infisical
+```
+
+This builds the extension and asks Chrome or Chromium to produce a signed CRX3 file:
+
+```text
+extensions/infisical/.output/k79infisical-0.1.0-chrome.crx
+```
+
+The first run generates a private key at `extensions/infisical/.keys/infisical.pem`. Keep that file private and reuse it for every update so the extension ID stays stable. Both the key and the CRX are ignored by git.
+
+- `CRX_KEY_PATH` — use an existing private key, for example one from a prior Web Store upload.
+- `CHROME_PATH` — point at a specific Chrome or Chromium executable if auto-detection fails.
+
+Chrome Web Store submissions use the ZIP from `bun run zip:infisical`, not a CRX. CRX files are for local testing, managed enterprise deployment, or self-hosted update servers. On Windows, Chrome only installs off-store CRX packages through enterprise policy or with developer-mode workarounds; **Load unpacked** remains the simplest local path.
+
 ## Commands
 
 ```bash
 bun run dev:infisical
 bun run build:infisical
 bun run zip:infisical
+bun run crx:infisical
 bun run build
 bun run zip
 bun run check
